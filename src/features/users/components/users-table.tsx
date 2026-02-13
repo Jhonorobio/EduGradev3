@@ -31,9 +31,10 @@ type DataTableProps = {
   data: User[]
   search: Record<string, unknown>
   navigate: NavigateFn
+  loading?: boolean
 }
 
-export function UsersTable({ data, search, navigate }: DataTableProps) {
+export function UsersTable({ data, search, navigate, loading = false }: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -174,6 +175,15 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
                   ))}
                 </TableRow>
               ))
+            ) : loading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className='h-24 text-center'
+                >
+                  Cargando usuarios...
+                </TableCell>
+              </TableRow>
             ) : (
               <TableRow>
                 <TableCell

@@ -1,5 +1,6 @@
 import z from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { Users } from '@/features/users'
 import { roles } from '@/features/users/data/data'
 
@@ -28,5 +29,9 @@ const usersSearchSchema = z.object({
 
 export const Route = createFileRoute('/_authenticated/users/')({
   validateSearch: usersSearchSchema,
-  component: Users,
+  component: () => (
+    <ProtectedRoute requiredRole="SUPER_ADMIN">
+      <Users />
+    </ProtectedRoute>
+  ),
 })

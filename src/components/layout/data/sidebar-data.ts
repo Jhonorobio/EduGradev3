@@ -18,36 +18,15 @@ import {
   Users,
   MessagesSquare,
   ShieldCheck,
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
 } from 'lucide-react'
-import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
   user: {
-    name: 'satnaing',
-    email: 'satnaingdev@gmail.com',
-    avatar: '/avatars/shadcn.jpg',
+    name: 'Usuario EduGrade',
+    email: 'usuario@edugrade.com',
+    avatar: '/avatars/edugrade.jpg',
   },
-  teams: [
-    {
-      name: 'Shadcn Admin',
-      logo: Command,
-      plan: 'Vite + ShadcnUI',
-    },
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
-    },
-  ],
   navGroups: [
     {
       title: 'General',
@@ -58,12 +37,12 @@ export const sidebarData: SidebarData = {
           icon: LayoutDashboard,
         },
         {
-          title: 'Tasks',
+          title: 'Tareas',
           url: '/tasks',
           icon: ListTodo,
         },
         {
-          title: 'Apps',
+          title: 'Aplicaciones',
           url: '/apps',
           icon: Package,
         },
@@ -74,51 +53,33 @@ export const sidebarData: SidebarData = {
           icon: MessagesSquare,
         },
         {
-          title: 'Users',
+          title: 'Usuarios',
           url: '/users',
           icon: Users,
-        },
-        {
-          title: 'Secured by Clerk',
-          icon: ClerkLogo,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: 'Sign Up',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: 'User Management',
-              url: '/clerk/user-management',
-            },
-          ],
         },
       ],
     },
     {
-      title: 'Pages',
+      title: 'Páginas',
       items: [
         {
-          title: 'Auth',
+          title: 'Autenticación',
           icon: ShieldCheck,
           items: [
             {
-              title: 'Sign In',
+              title: 'Iniciar Sesión',
               url: '/sign-in',
             },
             {
-              title: 'Sign In (2 Col)',
+              title: 'Iniciar Sesión (2 Columnas)',
               url: '/sign-in-2',
             },
             {
-              title: 'Sign Up',
+              title: 'Registrarse',
               url: '/sign-up',
             },
             {
-              title: 'Forgot Password',
+              title: 'Olvidé Contraseña',
               url: '/forgot-password',
             },
             {
@@ -128,31 +89,31 @@ export const sidebarData: SidebarData = {
           ],
         },
         {
-          title: 'Errors',
+          title: 'Errores',
           icon: Bug,
           items: [
             {
-              title: 'Unauthorized',
+              title: 'No Autorizado',
               url: '/errors/unauthorized',
               icon: Lock,
             },
             {
-              title: 'Forbidden',
+              title: 'Prohibido',
               url: '/errors/forbidden',
               icon: UserX,
             },
             {
-              title: 'Not Found',
+              title: 'No Encontrado',
               url: '/errors/not-found',
               icon: FileX,
             },
             {
-              title: 'Internal Server Error',
+              title: 'Error del Servidor',
               url: '/errors/internal-server-error',
               icon: ServerOff,
             },
             {
-              title: 'Maintenance Error',
+              title: 'Error de Mantenimiento',
               url: '/errors/maintenance-error',
               icon: Construction,
             },
@@ -161,41 +122,41 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: 'Other',
+      title: 'Otros',
       items: [
         {
-          title: 'Settings',
+          title: 'Configuración',
           icon: Settings,
           items: [
             {
-              title: 'Profile',
+              title: 'Perfil',
               url: '/settings',
               icon: UserCog,
             },
             {
-              title: 'Account',
+              title: 'Cuenta',
               url: '/settings/account',
               icon: Wrench,
             },
             {
-              title: 'Appearance',
+              title: 'Apariencia',
               url: '/settings/appearance',
               icon: Palette,
             },
             {
-              title: 'Notifications',
+              title: 'Notificaciones',
               url: '/settings/notifications',
               icon: Bell,
             },
             {
-              title: 'Display',
+              title: 'Pantalla',
               url: '/settings/display',
               icon: Monitor,
             },
           ],
         },
         {
-          title: 'Help Center',
+          title: 'Centro de Ayuda',
           url: '/help-center',
           icon: HelpCircle,
         },
