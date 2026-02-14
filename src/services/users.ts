@@ -7,6 +7,12 @@ const MOCK_USERS = [
   { id: 'usr-admin', name: 'Admin Colegio', email: 'admin@colegio.com', role: UserRole.ADMIN_COLEGIO, username: 'Colegio' },
   { id: 'usr-teacher-1', name: 'Jhon Doe', email: 'jhon.doe@colegio.com', role: UserRole.DOCENTE, username: 'Jhon' },
   { id: 'usr-teacher-2', name: 'Jane Smith', email: 'jane.smith@colegio.com', role: UserRole.DOCENTE, username: 'Jane' },
+  { id: 'usr-teacher-3', name: 'María González', email: 'maria.gonzalez@colegio.com', role: UserRole.DOCENTE, username: 'María' },
+  { id: 'usr-teacher-4', name: 'Juan Pérez', email: 'juan.perez@colegio.com', role: UserRole.DOCENTE, username: 'Juan' },
+  { id: 'usr-teacher-5', name: 'Ana Martínez', email: 'ana.martinez@colegio.com', role: UserRole.DOCENTE, username: 'Ana' },
+  { id: 'usr-teacher-6', name: 'Carlos Rodríguez', email: 'carlos.rodriguez@colegio.com', role: UserRole.DOCENTE, username: 'Carlos' },
+  { id: 'usr-teacher-7', name: 'Laura Sánchez', email: 'laura.sanchez@colegio.com', role: UserRole.DOCENTE, username: 'Laura' },
+  { id: 'usr-teacher-8', name: 'Roberto Díaz', email: 'roberto.diaz@colegio.com', role: UserRole.DOCENTE, username: 'Roberto' },
 ];
 
 export async function getUsers(): Promise<User[]> {
@@ -28,6 +34,30 @@ export async function getUsers(): Promise<User[]> {
     return data || [];
   } catch (error) {
     console.error('Unexpected error fetching users:', error);
+    return [];
+  }
+}
+
+export async function getTeachers(): Promise<User[]> {
+  if (!isSupabaseConfigured() || !supabase) {
+    // Demo mode - return mock teachers only
+    return MOCK_USERS.filter(user => user.role === UserRole.DOCENTE);
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, email, role, username')
+      .eq('role', UserRole.DOCENTE);
+
+    if (error) {
+      console.error('Error fetching teachers:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Unexpected error fetching teachers:', error);
     return [];
   }
 }

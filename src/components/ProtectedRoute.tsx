@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { Outlet, useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/use-auth';
 
 interface ProtectedRouteProps {
   children?: React.ReactNode;
-  requiredRole?: 'SUPER_ADMIN' | 'ADMIN_COLEGIO' | 'DOCENTE';
+  requiredRole?: 'SUPER_ADMIN' | 'ADMIN_COLEGIO' | 'DOCENTE' | Array<'SUPER_ADMIN' | 'ADMIN_COLEGIO' | 'DOCENTE'>;
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
@@ -18,10 +18,15 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     }
 
     if (requiredRole) {
-      const hasRequiredRole = 
-        (requiredRole === 'SUPER_ADMIN' && isSuperAdmin) ||
-        (requiredRole === 'ADMIN_COLEGIO' && isAdminColegio) ||
-        (requiredRole === 'DOCENTE' && isDocente);
+      const hasRequiredRole = Array.isArray(requiredRole)
+        ? requiredRole.some(role => 
+            (role === 'SUPER_ADMIN' && isSuperAdmin) ||
+            (role === 'ADMIN_COLEGIO' && isAdminColegio) ||
+            (role === 'DOCENTE' && isDocente)
+          )
+        : (requiredRole === 'SUPER_ADMIN' && isSuperAdmin) ||
+          (requiredRole === 'ADMIN_COLEGIO' && isAdminColegio) ||
+          (requiredRole === 'DOCENTE' && isDocente);
 
       if (!hasRequiredRole) {
         navigate({ to: '/403', replace: true });
@@ -35,10 +40,15 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   if (requiredRole) {
-    const hasRequiredRole = 
-      (requiredRole === 'SUPER_ADMIN' && isSuperAdmin) ||
-      (requiredRole === 'ADMIN_COLEGIO' && isAdminColegio) ||
-      (requiredRole === 'DOCENTE' && isDocente);
+    const hasRequiredRole = Array.isArray(requiredRole)
+      ? requiredRole.some(role => 
+          (role === 'SUPER_ADMIN' && isSuperAdmin) ||
+          (role === 'ADMIN_COLEGIO' && isAdminColegio) ||
+          (role === 'DOCENTE' && isDocente)
+        )
+      : (requiredRole === 'SUPER_ADMIN' && isSuperAdmin) ||
+        (requiredRole === 'ADMIN_COLEGIO' && isAdminColegio) ||
+        (requiredRole === 'DOCENTE' && isDocente);
 
     if (!hasRequiredRole) {
       return null; // or return an "access denied" component

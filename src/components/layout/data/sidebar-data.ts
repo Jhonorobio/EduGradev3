@@ -18,6 +18,7 @@ import {
   Users,
   MessagesSquare,
   ShieldCheck,
+  BookOpen,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -56,6 +57,29 @@ export const sidebarData: SidebarData = {
           title: 'Usuarios',
           url: '/users',
           icon: Users,
+        },
+        {
+          title: 'Ajustes Académicos',
+          url: '/academic-settings',
+          icon: BookOpen,
+          items: [
+            {
+              title: 'Periodos',
+              url: '/academic-settings/periods',
+            },
+            {
+              title: 'Materias',
+              url: '/academic-settings/subjects',
+            },
+            {
+              title: 'Grados',
+              url: '/academic-settings/grades',
+            },
+            {
+              title: 'Asignaciones',
+              url: '/academic-settings/assignments',
+            },
+          ],
         },
       ],
     },

@@ -28,11 +28,16 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
+import { Route as AuthenticatedAcademicSettingsIndexRouteImport } from './routes/_authenticated/academic-settings/index'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedAcademicSettingsSubjectsRouteImport } from './routes/_authenticated/academic-settings/subjects'
+import { Route as AuthenticatedAcademicSettingsPeriodsRouteImport } from './routes/_authenticated/academic-settings/periods'
+import { Route as AuthenticatedAcademicSettingsGradesRouteImport } from './routes/_authenticated/academic-settings/grades'
+import { Route as AuthenticatedAcademicSettingsAssignmentsRouteImport } from './routes/_authenticated/academic-settings/assignments'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -131,6 +136,12 @@ const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
   path: '/apps/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAcademicSettingsIndexRoute =
+  AuthenticatedAcademicSettingsIndexRouteImport.update({
+    id: '/academic-settings/',
+    path: '/academic-settings/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -161,6 +172,30 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAcademicSettingsSubjectsRoute =
+  AuthenticatedAcademicSettingsSubjectsRouteImport.update({
+    id: '/academic-settings/subjects',
+    path: '/academic-settings/subjects',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcademicSettingsPeriodsRoute =
+  AuthenticatedAcademicSettingsPeriodsRouteImport.update({
+    id: '/academic-settings/periods',
+    path: '/academic-settings/periods',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcademicSettingsGradesRoute =
+  AuthenticatedAcademicSettingsGradesRouteImport.update({
+    id: '/academic-settings/grades',
+    path: '/academic-settings/grades',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAcademicSettingsAssignmentsRoute =
+  AuthenticatedAcademicSettingsAssignmentsRouteImport.update({
+    id: '/academic-settings/assignments',
+    path: '/academic-settings/assignments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -175,11 +210,16 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/academic-settings/assignments': typeof AuthenticatedAcademicSettingsAssignmentsRoute
+  '/academic-settings/grades': typeof AuthenticatedAcademicSettingsGradesRoute
+  '/academic-settings/periods': typeof AuthenticatedAcademicSettingsPeriodsRoute
+  '/academic-settings/subjects': typeof AuthenticatedAcademicSettingsSubjectsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/academic-settings/': typeof AuthenticatedAcademicSettingsIndexRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
@@ -199,11 +239,16 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/academic-settings/assignments': typeof AuthenticatedAcademicSettingsAssignmentsRoute
+  '/academic-settings/grades': typeof AuthenticatedAcademicSettingsGradesRoute
+  '/academic-settings/periods': typeof AuthenticatedAcademicSettingsPeriodsRoute
+  '/academic-settings/subjects': typeof AuthenticatedAcademicSettingsSubjectsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/academic-settings': typeof AuthenticatedAcademicSettingsIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
@@ -226,11 +271,16 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/academic-settings/assignments': typeof AuthenticatedAcademicSettingsAssignmentsRoute
+  '/_authenticated/academic-settings/grades': typeof AuthenticatedAcademicSettingsGradesRoute
+  '/_authenticated/academic-settings/periods': typeof AuthenticatedAcademicSettingsPeriodsRoute
+  '/_authenticated/academic-settings/subjects': typeof AuthenticatedAcademicSettingsSubjectsRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/academic-settings/': typeof AuthenticatedAcademicSettingsIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
@@ -253,11 +303,16 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/academic-settings/assignments'
+    | '/academic-settings/grades'
+    | '/academic-settings/periods'
+    | '/academic-settings/subjects'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/academic-settings/'
     | '/apps/'
     | '/chats/'
     | '/help-center/'
@@ -277,11 +332,16 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/academic-settings/assignments'
+    | '/academic-settings/grades'
+    | '/academic-settings/periods'
+    | '/academic-settings/subjects'
     | '/errors/$error'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/academic-settings'
     | '/apps'
     | '/chats'
     | '/help-center'
@@ -303,11 +363,16 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/academic-settings/assignments'
+    | '/_authenticated/academic-settings/grades'
+    | '/_authenticated/academic-settings/periods'
+    | '/_authenticated/academic-settings/subjects'
     | '/_authenticated/errors/$error'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
+    | '/_authenticated/academic-settings/'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
     | '/_authenticated/help-center/'
@@ -465,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/academic-settings/': {
+      id: '/_authenticated/academic-settings/'
+      path: '/academic-settings'
+      fullPath: '/academic-settings/'
+      preLoaderRoute: typeof AuthenticatedAcademicSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
       path: '/notifications'
@@ -500,6 +572,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/academic-settings/subjects': {
+      id: '/_authenticated/academic-settings/subjects'
+      path: '/academic-settings/subjects'
+      fullPath: '/academic-settings/subjects'
+      preLoaderRoute: typeof AuthenticatedAcademicSettingsSubjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academic-settings/periods': {
+      id: '/_authenticated/academic-settings/periods'
+      path: '/academic-settings/periods'
+      fullPath: '/academic-settings/periods'
+      preLoaderRoute: typeof AuthenticatedAcademicSettingsPeriodsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academic-settings/grades': {
+      id: '/_authenticated/academic-settings/grades'
+      path: '/academic-settings/grades'
+      fullPath: '/academic-settings/grades'
+      preLoaderRoute: typeof AuthenticatedAcademicSettingsGradesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academic-settings/assignments': {
+      id: '/_authenticated/academic-settings/assignments'
+      path: '/academic-settings/assignments'
+      fullPath: '/academic-settings/assignments'
+      preLoaderRoute: typeof AuthenticatedAcademicSettingsAssignmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -529,7 +629,12 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAcademicSettingsAssignmentsRoute: typeof AuthenticatedAcademicSettingsAssignmentsRoute
+  AuthenticatedAcademicSettingsGradesRoute: typeof AuthenticatedAcademicSettingsGradesRoute
+  AuthenticatedAcademicSettingsPeriodsRoute: typeof AuthenticatedAcademicSettingsPeriodsRoute
+  AuthenticatedAcademicSettingsSubjectsRoute: typeof AuthenticatedAcademicSettingsSubjectsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedAcademicSettingsIndexRoute: typeof AuthenticatedAcademicSettingsIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
@@ -540,7 +645,17 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAcademicSettingsAssignmentsRoute:
+    AuthenticatedAcademicSettingsAssignmentsRoute,
+  AuthenticatedAcademicSettingsGradesRoute:
+    AuthenticatedAcademicSettingsGradesRoute,
+  AuthenticatedAcademicSettingsPeriodsRoute:
+    AuthenticatedAcademicSettingsPeriodsRoute,
+  AuthenticatedAcademicSettingsSubjectsRoute:
+    AuthenticatedAcademicSettingsSubjectsRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedAcademicSettingsIndexRoute:
+    AuthenticatedAcademicSettingsIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
