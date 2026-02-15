@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { useState, useEffect } from 'react'
-import { useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/hooks/use-auth'
 import { getAssignmentsByTeacher, Assignment } from '@/services/assignments'
 import { sortGradesEducationally } from '@/utils/grade-ordering'
@@ -45,7 +44,6 @@ export function Planillas() {
   const [selectedSubject, setSelectedSubject] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const { user, isDocente } = useAuth()
-  const navigate = useNavigate()
 
   useEffect(() => {
     if (user && isDocente) {
@@ -215,7 +213,6 @@ export function Planillas() {
                     <Button
                       variant='outline'
                       size='sm'
-                      onClick={() => navigate(`/planillas/${gradeApp.id}`)}
                     >
                       Abrir Planilla
                     </Button>
