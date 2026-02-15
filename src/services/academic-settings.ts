@@ -1,50 +1,41 @@
-import { supabase, isSupabaseConfigured } from './supabase'
+import { supabase } from './supabase'
 
 export interface AcademicSettings {
   periodCount: number
   periodWeights: { [key: number]: number }
 }
 
-const DEFAULT_ACADEMIC_SETTINGS: AcademicSettings = {
-  periodCount: 3,
-  periodWeights: { 1: 30, 2: 30, 3: 40 },
-}
-
 export async function getAcademicSettings(): Promise<{ settings: AcademicSettings, isDefault: boolean }> {
-  if (!isSupabaseConfigured() || !supabase) {
-    return { settings: DEFAULT_ACADEMIC_SETTINGS, isDefault: true }
-  }
+  try {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('*')
+      .limit(1)
+      .single()
 
-  const { data, error } = await supabase
-    .from('settings')
-    .select('*')
-    .limit(1)
-    .single()
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      console.error('Error fetching academic settings:', error)
+      throw new Error('Error al cargar la configuración académica')
+    }
 
-  if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-    console.error('Error fetching academic settings:', error)
-    return { settings: DEFAULT_ACADEMIC_SETTINGS, isDefault: true }
-  }
+    if (!data) {
+      throw new Error('No se encontró configuración académica')
+    }
 
-  if (!data) {
-    return { settings: DEFAULT_ACADEMIC_SETTINGS, isDefault: true }
-  }
-
-  return {
-    settings: {
-      periodCount: data.period_count,
-      periodWeights: data.period_weights,
-    },
-    isDefault: false
+    return {
+      settings: {
+        periodCount: data.period_count,
+        periodWeights: data.period_weights,
+      },
+      isDefault: false
+    }
+  } catch (error) {
+    console.error('Unexpected error fetching academic settings:', error)
+    throw new Error('Error inesperado al cargar la configuración académica')
   }
 }
 
 export async function saveAcademicSettings(settings: AcademicSettings) {
-  if (!isSupabaseConfigured() || !supabase) {
-    console.log("Demo mode: saving settings", settings)
-    return
-  }
-
   try {
     // Use upsert with a fixed approach - delete all existing settings first, then insert new one
     console.log('Saving settings:', settings)

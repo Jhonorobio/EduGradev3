@@ -19,4 +19,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    host: '0.0.0.0', // Permitir acceso desde cualquier IP en la red
+    port: 5173,      // Puerto específico
+    strictPort: true, // No cambiar el puerto si está ocupado
+  },
 })

@@ -19,6 +19,7 @@ import {
   MessagesSquare,
   ShieldCheck,
   BookOpen,
+  FileText,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -41,6 +42,11 @@ export const sidebarData: SidebarData = {
           title: 'Tareas',
           url: '/tasks',
           icon: ListTodo,
+        },
+        {
+          title: 'Planillas',
+          url: '/planillas',
+          icon: FileText,
         },
         {
           title: 'Aplicaciones',

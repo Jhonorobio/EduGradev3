@@ -3,7 +3,7 @@ import { supabase } from '@/services/supabase'
 export interface Grade {
   id: string
   name: string
-  level: 'Primaria' | 'Bachillerato'
+  level: 'Preescolar' | 'Primaria' | 'Bachillerato'
   groupDirector: string
   created_at?: string
   updated_at?: string

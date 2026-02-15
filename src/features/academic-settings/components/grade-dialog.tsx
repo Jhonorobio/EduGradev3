@@ -33,7 +33,7 @@ export function GradeDialog({
 }: GradeDialogProps) {
   const [formData, setFormData] = useState({
     name: '',
-    level: 'Primaria' as 'Primaria' | 'Bachillerato',
+    level: 'Primaria' as 'Preescolar' | 'Primaria' | 'Bachillerato',
     groupDirector: ''
   })
   const [teachers, setTeachers] = useState<User[]>([])
@@ -126,7 +126,7 @@ export function GradeDialog({
             <Label htmlFor="level">Nivel Educativo</Label>
             <Select 
               value={formData.level} 
-              onValueChange={(value: 'Primaria' | 'Bachillerato') => 
+              onValueChange={(value: 'Preescolar' | 'Primaria' | 'Bachillerato') => 
                 setFormData(prev => ({ ...prev, level: value }))
               }
             >
@@ -134,6 +134,7 @@ export function GradeDialog({
                 <SelectValue placeholder="Selecciona un nivel" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="Preescolar">Preescolar</SelectItem>
                 <SelectItem value="Primaria">Primaria</SelectItem>
                 <SelectItem value="Bachillerato">Bachillerato</SelectItem>
               </SelectContent>
