@@ -6,15 +6,24 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { AppTitle } from './app-title'
 import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
+import { ColegioSwitcher } from './colegio-switcher'
 import { useAuth } from '@/hooks/use-auth'
+import { useColegio } from '@/hooks/use-colegio'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
-  const { user, isSuperAdmin, isAdminColegio } = useAuth()
+  const { user, isSuperAdmin, isAdminColegio, isDocente } = useAuth()
+  const { setSelectedColegio } = useColegio()
+  
+  const allowedForDocente = [
+    'Dashboard',
+    'Planillas',
+    'Configuración',
+    'Centro de Ayuda'
+  ]
   
   // Function to format role names
   const formatRole = (role: string): string => {
@@ -34,15 +43,56 @@ export function AppSidebar() {
   const filteredNavGroups = sidebarData.navGroups.map(group => ({
     ...group,
     items: group.items.filter(item => {
-      // Only show "Usuarios" item to admin users
-      if (item.title === 'Usuarios') {
-        return isSuperAdmin || isAdminColegio
+      if (isSuperAdmin || isAdminColegio) {
+        if (item.title === 'Gestión' || item.title === 'Ajustes Académicos') {
+          return true
+        }
+        if (item.title === 'Usuarios') {
+          return true
+        }
+        return true
       }
-      // Only show "Ajustes Académicos" item to admin users
-      if (item.title === 'Ajustes Académicos') {
-        return isSuperAdmin || isAdminColegio
+
+      if (isDocente) {
+        return allowedForDocente.includes(item.title)
+      }
+
+      // Default: hide admin menus
+      if (item.title === 'Gestión' || item.title === 'Ajustes Académicos') {
+        return false
+      }
+      if (item.title === 'Usuarios') {
+        return false
       }
       return true
+    }).map(item => {
+      if (isSuperAdmin || isAdminColegio) {
+        return item
+      }
+
+      if (isDocente && item.items) {
+        if (item.title === 'Configuración') {
+          return {
+            ...item,
+            items: item.items.filter(subItem => {
+              const allowedSubItems = [
+                'Perfil',
+                'Cuenta',
+                'Apariencia',
+                'Notificaciones',
+                'Pantalla'
+              ]
+              return allowedSubItems.includes(subItem.title)
+            })
+          }
+        }
+        return item
+      }
+
+      if (item.items && (item.title === 'Gestión' || item.title === 'Ajustes Académicos')) {
+        return item
+      }
+      return item
     })
   })).filter(group => group.items.length > 0)
   
@@ -60,7 +110,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
-        <AppTitle />
+        <ColegioSwitcher onColegioChange={setSelectedColegio} />
       </SidebarHeader>
       <SidebarContent>
         {filteredNavGroups.map((props) => (

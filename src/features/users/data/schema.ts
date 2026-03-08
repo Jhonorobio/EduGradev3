@@ -10,6 +10,16 @@ const userSchema = z.object({
     z.literal('ADMIN_COLEGIO'),
     z.literal('DOCENTE'),
   ]),
+  status: z.union([
+    z.literal('active'),
+    z.literal('inactive'),
+    z.literal('suspended'),
+  ]),
+  colegios: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    code: z.string(),
+  })).optional(),
 })
 
 export type User = z.infer<typeof userSchema>

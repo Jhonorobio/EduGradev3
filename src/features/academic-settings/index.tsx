@@ -7,7 +7,7 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, BookOpen, GraduationCap, ClipboardList } from 'lucide-react'
+import { BookOpen, GraduationCap, ClipboardList, Settings } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 
 const route = getRouteApi('/_authenticated/academic-settings/')
@@ -32,22 +32,7 @@ export function AcademicSettings() {
           </p>
         </div>
 
-        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
-          <Card className='hover:shadow-md transition-shadow cursor-pointer'>
-            <Link to='/academic-settings/periods'>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>Periodos</CardTitle>
-                <Calendar className='h-4 w-4 text-muted-foreground' />
-              </CardHeader>
-              <CardContent>
-                <div className='text-2xl font-bold'>Gestionar</div>
-                <p className='text-xs text-muted-foreground'>
-                  Configura los periodos académicos
-                </p>
-              </CardContent>
-            </Link>
-          </Card>
-
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
           <Card className='hover:shadow-md transition-shadow cursor-pointer'>
             <Link to='/academic-settings/subjects'>
               <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
@@ -88,6 +73,21 @@ export function AcademicSettings() {
                 <div className='text-2xl font-bold'>Gestionar</div>
                 <p className='text-xs text-muted-foreground'>
                   Asigna materias a docentes
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
+
+          <Card className='hover:shadow-md transition-shadow cursor-pointer'>
+            <Link to='/gestion/ponderado'>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>Ponderados</CardTitle>
+                <Settings className='h-4 w-4 text-muted-foreground' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>Configurar</div>
+                <p className='text-xs text-muted-foreground'>
+                  Configura los ponderados por colegio
                 </p>
               </CardContent>
             </Link>

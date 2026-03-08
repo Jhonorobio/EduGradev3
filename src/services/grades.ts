@@ -4,21 +4,29 @@ export interface Grade {
   id: string
   name: string
   level: 'Preescolar' | 'Primaria' | 'Bachillerato'
-  groupDirector: string
+  group_director: string
+  colegio_id: string
   created_at?: string
   updated_at?: string
 }
 
-export async function getGrades(): Promise<Grade[]> {
+export async function getGrades(colegioId?: string): Promise<Grade[]> {
   if (!supabase) {
     throw new Error('Supabase no está configurado')
   }
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('grades')
       .select('*')
       .order('name')
+
+    // If colegioId is provided, filter by it
+    if (colegioId) {
+      query = query.eq('colegio_id', colegioId)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching grades:', error)
@@ -34,6 +42,10 @@ export async function getGrades(): Promise<Grade[]> {
     console.error('Unexpected error fetching grades:', error)
     throw new Error('Error inesperado al cargar los grados')
   }
+}
+
+export async function getGradesByColegio(colegioId: string): Promise<Grade[]> {
+  return getGrades(colegioId)
 }
 
 export async function createGrade(grade: Omit<Grade, 'id' | 'created_at' | 'updated_at'>): Promise<Grade> {

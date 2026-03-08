@@ -32,15 +32,58 @@ import {
   type NavLink,
   type NavGroup as NavGroupProps,
 } from './types'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export function NavGroup({ title, items }: NavGroupProps) {
   const { state, isMobile } = useSidebar()
   const href = useLocation({ select: (location) => location.href })
+  const { permissions } = usePermissions()
+
+  // Función para verificar si un item debe mostrarse según los permisos
+  const shouldShowItem = (item: NavItem | NavCollapsible): boolean => {
+    // Si el item no tiene una URL específica, mostramos el grupo completo
+    // y verificamos los permisos de los subitems
+    if ('items' in item && item.items) {
+      return item.items.some(subItem => shouldShowItem(subItem))
+    }
+
+    // Para items con URL, verificamos permisos específicos
+    const url = item.url || ''
+    
+    // Mapeo de URLs a permisos
+    const urlPermissionMap: Record<string, keyof typeof permissions> = {
+      '/colegios': 'canAccessColegios',
+      '/gestion': 'canAccessGestion',
+      '/gestion/alumnos': 'canAccessAlumnos',
+      '/gestion/ponderado': 'canAccessPonderado',
+      '/planillas': 'canAccessPlanillas',
+      '/dashboard': 'canAccessDashboard',
+    }
+
+    const requiredPermission = urlPermissionMap[url]
+    
+    // Si no hay un permiso específico definido, mostramos el item
+    if (!requiredPermission) {
+      return true
+    }
+
+    // Verificamos si el usuario tiene el permiso requerido
+    return permissions[requiredPermission]
+  }
+
+  // Filtrar los items según los permisos
+  const filteredItems = items.filter(shouldShowItem)
+
+  // Si no hay items que mostrar, no renderizamos el grupo
+  if (filteredItems.length === 0) {
+    return null
+  }
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => {
+        {filteredItems.map((item) => {
           const key = `${item.title}-${item.url}`
 
           if (!item.items)
@@ -89,6 +132,15 @@ function SidebarMenuCollapsible({
   href: string
 }) {
   const { setOpenMobile } = useSidebar()
+
+  // Filtrar subitems según permisos
+  const filteredSubItems = item.items ? item.items.filter(shouldShowSubItem) : []
+
+  // Si no hay subitems que mostrar, no renderizamos el collapsible
+  if (filteredSubItems.length === 0) {
+    return null
+  }
+
   return (
     <Collapsible
       asChild
@@ -106,7 +158,7 @@ function SidebarMenuCollapsible({
         </CollapsibleTrigger>
         <CollapsibleContent className='CollapsibleContent'>
           <SidebarMenuSub>
-            {item.items.map((subItem) => (
+            {filteredSubItems.map((subItem) => (
               <SidebarMenuSubItem key={subItem.title}>
                 <SidebarMenuSubButton
                   asChild
@@ -134,6 +186,14 @@ function SidebarMenuCollapsedDropdown({
   item: NavCollapsible
   href: string
 }) {
+  // Filtrar subitems según permisos
+  const filteredSubItems = item.items ? item.items.filter(shouldShowSubItem) : []
+
+  // Si no hay subitems que mostrar, no renderizamos el dropdown
+  if (filteredSubItems.length === 0) {
+    return null
+  }
+
   return (
     <SidebarMenuItem>
       <DropdownMenu>
@@ -153,7 +213,7 @@ function SidebarMenuCollapsedDropdown({
             {item.title} {item.badge ? `(${item.badge})` : ''}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {item.items.map((sub) => (
+          {filteredSubItems.map((sub) => (
             <DropdownMenuItem key={`${sub.title}-${sub.url}`} asChild>
               <Link
                 to={sub.url}
@@ -171,6 +231,29 @@ function SidebarMenuCollapsedDropdown({
       </DropdownMenu>
     </SidebarMenuItem>
   )
+}
+
+// Función auxiliar para verificar si un subitem debe mostrarse
+function shouldShowSubItem(subItem: NavItem): boolean {
+  const { permissions } = usePermissions()
+  
+  // Mapeo de URLs a permisos
+  const urlPermissionMap: Record<string, keyof typeof permissions> = {
+    '/colegios': 'canAccessColegios',
+    '/gestion': 'canAccessGestion',
+    '/gestion/alumnos': 'canAccessAlumnos',
+    '/gestion/ponderado': 'canAccessPonderado',
+    '/planillas': 'canAccessPlanillas',
+    '/dashboard': 'canAccessDashboard',
+  }
+
+  const requiredPermission = urlPermissionMap[subItem.url || '']
+  
+  if (!requiredPermission) {
+    return true
+  }
+
+  return permissions[requiredPermission]
 }
 
 function checkIsActive(href: string, item: NavItem, mainNav = false) {

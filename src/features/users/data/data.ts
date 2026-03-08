@@ -1,4 +1,4 @@
-import { Shield, UserCheck, Users, GraduationCap } from 'lucide-react'
+import { Shield, UserCheck, GraduationCap, CheckCircle, XCircle, Ban } from 'lucide-react'
 
 export const roles = [
   {
@@ -15,5 +15,23 @@ export const roles = [
     label: 'Docente',
     value: 'DOCENTE',
     icon: GraduationCap,
+  },
+] as const
+
+export const statuses = [
+  {
+    label: 'Active',
+    value: 'active',
+    icon: CheckCircle,
+  },
+  {
+    label: 'Inactive',
+    value: 'inactive',
+    icon: XCircle,
+  },
+  {
+    label: 'Suspended',
+    value: 'suspended',
+    icon: Ban,
   },
 ] as const

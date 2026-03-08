@@ -5,16 +5,24 @@ export interface Subject {
   name: string
   code: string
   levels: ('Primaria' | 'Bachillerato')[]
+  colegio_id: string
   created_at?: string
   updated_at?: string
 }
 
-export async function getSubjects(): Promise<Subject[]> {
+export async function getSubjects(colegioId?: string): Promise<Subject[]> {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('subjects')
       .select('*')
       .order('name')
+
+    // If colegioId is provided, filter by it
+    if (colegioId) {
+      query = query.eq('colegio_id', colegioId)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching subjects:', error)
@@ -29,6 +37,10 @@ export async function getSubjects(): Promise<Subject[]> {
     console.error('Unexpected error fetching subjects:', error)
     throw new Error('Error inesperado al cargar las materias')
   }
+}
+
+export async function getSubjectsByColegio(colegioId: string): Promise<Subject[]> {
+  return getSubjects(colegioId)
 }
 
 export async function createSubject(subject: Omit<Subject, 'id' | 'created_at' | 'updated_at'>): Promise<Subject> {

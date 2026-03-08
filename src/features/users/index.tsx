@@ -24,7 +24,7 @@ export function Users() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      getUsers().then(data => {
+      getUsers(true).then(data => {
         setUsers(data)
         setLoading(false)
       })

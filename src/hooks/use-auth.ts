@@ -9,5 +9,6 @@ export function useAuth() {
     isSuperAdmin: auth.user?.role === 'SUPER_ADMIN',
     isAdminColegio: auth.user?.role === 'ADMIN_COLEGIO',
     isDocente: auth.user?.role === 'DOCENTE',
+    isAdmin: auth.user?.role === 'SUPER_ADMIN' || auth.user?.role === 'ADMIN_COLEGIO',
   };
 }

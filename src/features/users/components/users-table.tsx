@@ -26,6 +26,7 @@ import { roles } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { usersColumns as columns } from './users-columns'
+import { getColegios } from '@/services/colegios'
 
 type DataTableProps = {
   data: User[]
@@ -39,6 +40,17 @@ export function UsersTable({ data, search, navigate, loading = false }: DataTabl
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
+  const [colegios, setColegios] = useState<any[]>([])
+
+  // Load colegios for filter
+  useEffect(() => {
+    getColegios().then(data => {
+      setColegios(data || [])
+    }).catch(error => {
+      console.error('Error loading colegios for filter:', error)
+      setColegios([])
+    })
+  }, [])
 
   // Local state management for table (uncomment to use local-only state, not synced with URL)
   // const [columnFilters, onColumnFiltersChange] = useState<ColumnFiltersState>([])
@@ -61,6 +73,7 @@ export function UsersTable({ data, search, navigate, loading = false }: DataTabl
       { columnId: 'username', searchKey: 'username', type: 'string' },
       { columnId: 'status', searchKey: 'status', type: 'array' },
       { columnId: 'role', searchKey: 'role', type: 'array' },
+      { columnId: 'colegios', searchKey: 'colegios', type: 'array' },
     ],
   })
 
@@ -119,6 +132,14 @@ export function UsersTable({ data, search, navigate, loading = false }: DataTabl
             columnId: 'role',
             title: 'Role',
             options: roles.map((role) => ({ ...role })),
+          },
+          {
+            columnId: 'colegios',
+            title: 'Colegios',
+            options: colegios.map((colegio) => ({
+              label: colegio.name,
+              value: colegio.id,
+            })),
           },
         ]}
       />

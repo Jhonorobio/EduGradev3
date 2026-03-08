@@ -1,11 +1,12 @@
 import { supabase } from './supabase';
-import { User, UserRole } from '@/types/auth';
+import { User, UserRole, UserStatus } from '@/types/auth';
+import { getUserColegios } from './colegios';
 
-export async function getUsers(): Promise<User[]> {
+export async function getUsers(includeColegios: boolean = false): Promise<User[]> {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, role, username')
+      .select('id, name, email, role, username, status')
       .order('name');
 
     if (error) {
@@ -13,7 +14,35 @@ export async function getUsers(): Promise<User[]> {
       throw new Error('Error al cargar los usuarios');
     }
 
-    return data || [];
+    // Add default status if not present in database
+    let users = (data || []).map(user => ({
+      ...user,
+      status: user.status || UserStatus.ACTIVE
+    }));
+
+    // If colegios are requested, load them for each user
+    if (includeColegios) {
+      const usersWithColegios = await Promise.all(
+        users.map(async (user) => {
+          try {
+            const userWithColegios = await getUserColegios(user.id);
+            return {
+              ...user,
+              colegios: userWithColegios?.colegios || []
+            };
+          } catch (error) {
+            console.error(`Error loading colegios for user ${user.id}:`, error);
+            return {
+              ...user,
+              colegios: []
+            };
+          }
+        })
+      );
+      return usersWithColegios;
+    }
+
+    return users;
   } catch (error) {
     console.error('Unexpected error fetching users:', error);
     throw new Error('Error inesperado al cargar los usuarios');
@@ -24,7 +53,7 @@ export async function getTeachers(): Promise<User[]> {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, role, username')
+      .select('id, name, email, role, username, status')
       .eq('role', UserRole.DOCENTE);
 
     if (error) {
@@ -32,7 +61,11 @@ export async function getTeachers(): Promise<User[]> {
       throw new Error('Error al cargar los docentes');
     }
 
-    return data || [];
+    // Add default status if not present in database
+    return (data || []).map(user => ({
+      ...user,
+      status: user.status || UserStatus.ACTIVE
+    }));
   } catch (error) {
     console.error('Unexpected error fetching teachers:', error);
     throw new Error('Error inesperado al cargar los docentes');
@@ -41,9 +74,15 @@ export async function getTeachers(): Promise<User[]> {
 
 export async function addUser(user: Omit<User, 'id'>): Promise<User | null> {
   try {
+    // Ensure status is provided, default to ACTIVE if not specified
+    const userWithStatus = {
+      ...user,
+      status: user.status || UserStatus.ACTIVE
+    };
+
     const { data, error } = await supabase
       .from('users')
-      .insert([user])
+      .insert([userWithStatus])
       .select()
       .single();
 

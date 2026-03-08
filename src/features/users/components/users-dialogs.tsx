@@ -1,6 +1,7 @@
 import { UsersActionDialog } from './users-action-dialog'
 import { UsersDeleteDialog } from './users-delete-dialog'
 import { UsersInviteDialog } from './users-invite-dialog'
+import { UserColegiosDialog } from './user-colegios-dialog'
 import { useUsers } from './users-provider'
 
 export function UsersDialogs() {
@@ -43,6 +44,18 @@ export function UsersDialogs() {
               }, 500)
             }}
             currentRow={currentRow}
+          />
+
+          <UserColegiosDialog
+            key={`user-colegios-${currentRow.id}`}
+            open={open === 'colegios'}
+            onOpenChange={() => {
+              setOpen('colegios')
+              setTimeout(() => {
+                setCurrentRow(null)
+              }, 500)
+            }}
+            user={currentRow}
           />
         </>
       )}

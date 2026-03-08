@@ -20,6 +20,11 @@ import {
   ShieldCheck,
   BookOpen,
   FileText,
+  UserPlus,
+  Calculator,
+  Sliders,
+  Building2,
+  Users2,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -37,6 +42,11 @@ export const sidebarData: SidebarData = {
           title: 'Dashboard',
           url: '/',
           icon: LayoutDashboard,
+        },
+        {
+          title: 'Teams',
+          url: '/teams',
+          icon: Users2,
         },
         {
           title: 'Tareas',
@@ -60,19 +70,35 @@ export const sidebarData: SidebarData = {
           icon: MessagesSquare,
         },
         {
-          title: 'Usuarios',
-          url: '/users',
-          icon: Users,
+          title: 'Gestión',
+          icon: Sliders,
+          items: [
+            {
+              title: 'Colegios',
+              url: '/gestion/colegios',
+              icon: Building2,
+            },
+            {
+              title: 'Usuarios',
+              url: '/users',
+              icon: Users,
+            },
+            {
+              title: 'Alumnos',
+              url: '/gestion/alumnos',
+              icon: UserPlus,
+            },
+            {
+              title: 'Ponderado',
+              url: '/gestion/ponderado',
+              icon: Calculator,
+            },
+          ],
         },
         {
           title: 'Ajustes Académicos',
-          url: '/academic-settings',
           icon: BookOpen,
           items: [
-            {
-              title: 'Periodos',
-              url: '/academic-settings/periods',
-            },
             {
               title: 'Materias',
               url: '/academic-settings/subjects',

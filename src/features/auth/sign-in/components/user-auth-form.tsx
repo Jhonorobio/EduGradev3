@@ -7,6 +7,7 @@ import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth-store'
 import { login as loginService } from '@/services/auth'
+import { canUserLogin } from '@/services/colegios'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -59,6 +60,15 @@ export function UserAuthForm({
       const user = await loginService(data.username, data.password)
       
       if (user) {
+        // Check if user can login (has active colegios)
+        const loginCheck = await canUserLogin(user.id)
+        
+        if (!loginCheck.canLogin) {
+          toast.error(loginCheck.reason || 'No tienes acceso al sistema')
+          setIsLoading(false)
+          return
+        }
+        
         // Set user in store
         auth.setUser(user)
         auth.setAccessToken('supabase-session-token')
@@ -73,7 +83,10 @@ export function UserAuthForm({
       }
     } catch (error) {
       console.error('Login error:', error)
-      toast.error('Error al iniciar sesión. Intenta de nuevo.')
+      
+      // Handle specific account status errors
+      const errorMessage = error instanceof Error ? error.message : 'Error al iniciar sesión. Intenta de nuevo.'
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }

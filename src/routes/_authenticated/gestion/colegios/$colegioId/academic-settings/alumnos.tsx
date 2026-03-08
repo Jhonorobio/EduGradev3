@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
-import { Periods } from '@/features/academic-settings/periods'
+import { ColegioAlumnos } from '@/features/colegios/academic-settings/alumnos'
 
-export const Route = createFileRoute('/_authenticated/academic-settings/periods')({
+export const Route = createFileRoute('/_authenticated/gestion/colegios/$colegioId/academic-settings/alumnos')({
   component: () => (
     <ProtectedRoute requiredRole={['SUPER_ADMIN', 'ADMIN_COLEGIO']}>
-      <Periods />
+      <ColegioAlumnos />
     </ProtectedRoute>
   ),
 })

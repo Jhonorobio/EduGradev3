@@ -23,10 +23,13 @@ import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedPlanillasRouteRouteImport } from './routes/_authenticated/planillas/route'
+import { Route as AuthenticatedGradebookRouteRouteImport } from './routes/_authenticated/gradebook/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
+import { Route as AuthenticatedTeamsIndexRouteImport } from './routes/_authenticated/teams/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
+import { Route as AuthenticatedGestionIndexRouteImport } from './routes/_authenticated/gestion/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as AuthenticatedAcademicSettingsIndexRouteImport } from './routes/_authenticated/academic-settings/index'
@@ -34,11 +37,24 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedGestionPonderadoRouteImport } from './routes/_authenticated/gestion/ponderado'
+import { Route as AuthenticatedGestionColegiosRouteImport } from './routes/_authenticated/gestion/colegios'
+import { Route as AuthenticatedGestionAlumnosRouteImport } from './routes/_authenticated/gestion/alumnos'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedAcademicSettingsSubjectsRouteImport } from './routes/_authenticated/academic-settings/subjects'
-import { Route as AuthenticatedAcademicSettingsPeriodsRouteImport } from './routes/_authenticated/academic-settings/periods'
 import { Route as AuthenticatedAcademicSettingsGradesRouteImport } from './routes/_authenticated/academic-settings/grades'
 import { Route as AuthenticatedAcademicSettingsAssignmentsRouteImport } from './routes/_authenticated/academic-settings/assignments'
+import { Route as AuthenticatedPlanillasTestRouteRouteImport } from './routes/_authenticated/planillas/test/route'
+import { Route as AuthenticatedPlanillasSimpleTestRouteRouteImport } from './routes/_authenticated/planillas/simple-test/route'
+import { Route as AuthenticatedGestionColegiosIndexRouteImport } from './routes/_authenticated/gestion/colegios/index'
+import { Route as AuthenticatedPlanillasSubjectIdGradeIdRouteRouteImport } from './routes/_authenticated/planillas/$subjectId/$gradeId/route'
+import { Route as AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRouteImport } from './routes/_authenticated/gestion/colegios/$colegioId/academic-settings/index'
+import { Route as AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRouteImport } from './routes/_authenticated/gestion/colegios/$colegioId/academic-settings/weights'
+import { Route as AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRouteImport } from './routes/_authenticated/gestion/colegios/$colegioId/academic-settings/subjects'
+import { Route as AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRouteImport } from './routes/_authenticated/gestion/colegios/$colegioId/academic-settings/grades'
+import { Route as AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRouteImport } from './routes/_authenticated/gestion/colegios/$colegioId/academic-settings/assignments'
+import { Route as AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRouteImport } from './routes/_authenticated/gestion/colegios/$colegioId/academic-settings/alumnos'
+import { Route as AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRouteImport } from './routes/_authenticated/gestion/colegios/$colegio/alumnosId/academic-settings'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -111,9 +127,20 @@ const AuthenticatedPlanillasRouteRoute =
     path: '/planillas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedGradebookRouteRoute =
+  AuthenticatedGradebookRouteRouteImport.update({
+    id: '/gradebook',
+    path: '/gradebook',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   id: '/users/',
   path: '/users/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTeamsIndexRoute = AuthenticatedTeamsIndexRouteImport.update({
+  id: '/teams/',
+  path: '/teams/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
@@ -131,6 +158,12 @@ const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
     id: '/help-center/',
     path: '/help-center/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGestionIndexRoute =
+  AuthenticatedGestionIndexRouteImport.update({
+    id: '/gestion/',
+    path: '/gestion/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
@@ -173,6 +206,24 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedGestionPonderadoRoute =
+  AuthenticatedGestionPonderadoRouteImport.update({
+    id: '/gestion/ponderado',
+    path: '/gestion/ponderado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGestionColegiosRoute =
+  AuthenticatedGestionColegiosRouteImport.update({
+    id: '/gestion/colegios',
+    path: '/gestion/colegios',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGestionAlumnosRoute =
+  AuthenticatedGestionAlumnosRouteImport.update({
+    id: '/gestion/alumnos',
+    path: '/gestion/alumnos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
@@ -183,12 +234,6 @@ const AuthenticatedAcademicSettingsSubjectsRoute =
   AuthenticatedAcademicSettingsSubjectsRouteImport.update({
     id: '/academic-settings/subjects',
     path: '/academic-settings/subjects',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAcademicSettingsPeriodsRoute =
-  AuthenticatedAcademicSettingsPeriodsRouteImport.update({
-    id: '/academic-settings/periods',
-    path: '/academic-settings/periods',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAcademicSettingsGradesRoute =
@@ -203,10 +248,89 @@ const AuthenticatedAcademicSettingsAssignmentsRoute =
     path: '/academic-settings/assignments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPlanillasTestRouteRoute =
+  AuthenticatedPlanillasTestRouteRouteImport.update({
+    id: '/test',
+    path: '/test',
+    getParentRoute: () => AuthenticatedPlanillasRouteRoute,
+  } as any)
+const AuthenticatedPlanillasSimpleTestRouteRoute =
+  AuthenticatedPlanillasSimpleTestRouteRouteImport.update({
+    id: '/simple-test',
+    path: '/simple-test',
+    getParentRoute: () => AuthenticatedPlanillasRouteRoute,
+  } as any)
+const AuthenticatedGestionColegiosIndexRoute =
+  AuthenticatedGestionColegiosIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedGestionColegiosRoute,
+  } as any)
+const AuthenticatedPlanillasSubjectIdGradeIdRouteRoute =
+  AuthenticatedPlanillasSubjectIdGradeIdRouteRouteImport.update({
+    id: '/$subjectId/$gradeId',
+    path: '/$subjectId/$gradeId',
+    getParentRoute: () => AuthenticatedPlanillasRouteRoute,
+  } as any)
+const AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRoute =
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRouteImport.update({
+    id: '/$colegioId/academic-settings/',
+    path: '/$colegioId/academic-settings/',
+    getParentRoute: () => AuthenticatedGestionColegiosRoute,
+  } as any)
+const AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRoute =
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRouteImport.update(
+    {
+      id: '/$colegioId/academic-settings/weights',
+      path: '/$colegioId/academic-settings/weights',
+      getParentRoute: () => AuthenticatedGestionColegiosRoute,
+    } as any,
+  )
+const AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRoute =
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRouteImport.update(
+    {
+      id: '/$colegioId/academic-settings/subjects',
+      path: '/$colegioId/academic-settings/subjects',
+      getParentRoute: () => AuthenticatedGestionColegiosRoute,
+    } as any,
+  )
+const AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRoute =
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRouteImport.update(
+    {
+      id: '/$colegioId/academic-settings/grades',
+      path: '/$colegioId/academic-settings/grades',
+      getParentRoute: () => AuthenticatedGestionColegiosRoute,
+    } as any,
+  )
+const AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRoute =
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRouteImport.update(
+    {
+      id: '/$colegioId/academic-settings/assignments',
+      path: '/$colegioId/academic-settings/assignments',
+      getParentRoute: () => AuthenticatedGestionColegiosRoute,
+    } as any,
+  )
+const AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRoute =
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRouteImport.update(
+    {
+      id: '/$colegioId/academic-settings/alumnos',
+      path: '/$colegioId/academic-settings/alumnos',
+      getParentRoute: () => AuthenticatedGestionColegiosRoute,
+    } as any,
+  )
+const AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRoute =
+  AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRouteImport.update(
+    {
+      id: '/$colegio/alumnosId/academic-settings',
+      path: '/$colegio/alumnosId/academic-settings',
+      getParentRoute: () => AuthenticatedGestionColegiosRoute,
+    } as any,
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/planillas': typeof AuthenticatedPlanillasRouteRoute
+  '/gradebook': typeof AuthenticatedGradebookRouteRoute
+  '/planillas': typeof AuthenticatedPlanillasRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -218,11 +342,15 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/planillas/simple-test': typeof AuthenticatedPlanillasSimpleTestRouteRoute
+  '/planillas/test': typeof AuthenticatedPlanillasTestRouteRoute
   '/academic-settings/assignments': typeof AuthenticatedAcademicSettingsAssignmentsRoute
   '/academic-settings/grades': typeof AuthenticatedAcademicSettingsGradesRoute
-  '/academic-settings/periods': typeof AuthenticatedAcademicSettingsPeriodsRoute
   '/academic-settings/subjects': typeof AuthenticatedAcademicSettingsSubjectsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/gestion/alumnos': typeof AuthenticatedGestionAlumnosRoute
+  '/gestion/colegios': typeof AuthenticatedGestionColegiosRouteWithChildren
+  '/gestion/ponderado': typeof AuthenticatedGestionPonderadoRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -230,13 +358,25 @@ export interface FileRoutesByFullPath {
   '/academic-settings/': typeof AuthenticatedAcademicSettingsIndexRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
+  '/gestion/': typeof AuthenticatedGestionIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/teams/': typeof AuthenticatedTeamsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/planillas/$subjectId/$gradeId': typeof AuthenticatedPlanillasSubjectIdGradeIdRouteRoute
+  '/gestion/colegios/': typeof AuthenticatedGestionColegiosIndexRoute
+  '/gestion/colegios/$colegio/alumnosId/academic-settings': typeof AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRoute
+  '/gestion/colegios/$colegioId/academic-settings/alumnos': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRoute
+  '/gestion/colegios/$colegioId/academic-settings/assignments': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRoute
+  '/gestion/colegios/$colegioId/academic-settings/grades': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRoute
+  '/gestion/colegios/$colegioId/academic-settings/subjects': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRoute
+  '/gestion/colegios/$colegioId/academic-settings/weights': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRoute
+  '/gestion/colegios/$colegioId/academic-settings/': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/planillas': typeof AuthenticatedPlanillasRouteRoute
+  '/gradebook': typeof AuthenticatedGradebookRouteRoute
+  '/planillas': typeof AuthenticatedPlanillasRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -248,11 +388,14 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/planillas/simple-test': typeof AuthenticatedPlanillasSimpleTestRouteRoute
+  '/planillas/test': typeof AuthenticatedPlanillasTestRouteRoute
   '/academic-settings/assignments': typeof AuthenticatedAcademicSettingsAssignmentsRoute
   '/academic-settings/grades': typeof AuthenticatedAcademicSettingsGradesRoute
-  '/academic-settings/periods': typeof AuthenticatedAcademicSettingsPeriodsRoute
   '/academic-settings/subjects': typeof AuthenticatedAcademicSettingsSubjectsRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/gestion/alumnos': typeof AuthenticatedGestionAlumnosRoute
+  '/gestion/ponderado': typeof AuthenticatedGestionPonderadoRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -260,15 +403,27 @@ export interface FileRoutesByTo {
   '/academic-settings': typeof AuthenticatedAcademicSettingsIndexRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/gestion': typeof AuthenticatedGestionIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
+  '/teams': typeof AuthenticatedTeamsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/planillas/$subjectId/$gradeId': typeof AuthenticatedPlanillasSubjectIdGradeIdRouteRoute
+  '/gestion/colegios': typeof AuthenticatedGestionColegiosIndexRoute
+  '/gestion/colegios/$colegio/alumnosId/academic-settings': typeof AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRoute
+  '/gestion/colegios/$colegioId/academic-settings/alumnos': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRoute
+  '/gestion/colegios/$colegioId/academic-settings/assignments': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRoute
+  '/gestion/colegios/$colegioId/academic-settings/grades': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRoute
+  '/gestion/colegios/$colegioId/academic-settings/subjects': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRoute
+  '/gestion/colegios/$colegioId/academic-settings/weights': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRoute
+  '/gestion/colegios/$colegioId/academic-settings': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/_authenticated/planillas': typeof AuthenticatedPlanillasRouteRoute
+  '/_authenticated/gradebook': typeof AuthenticatedGradebookRouteRoute
+  '/_authenticated/planillas': typeof AuthenticatedPlanillasRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
   '/(auth)/otp': typeof authOtpRoute
@@ -281,11 +436,15 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/planillas/simple-test': typeof AuthenticatedPlanillasSimpleTestRouteRoute
+  '/_authenticated/planillas/test': typeof AuthenticatedPlanillasTestRouteRoute
   '/_authenticated/academic-settings/assignments': typeof AuthenticatedAcademicSettingsAssignmentsRoute
   '/_authenticated/academic-settings/grades': typeof AuthenticatedAcademicSettingsGradesRoute
-  '/_authenticated/academic-settings/periods': typeof AuthenticatedAcademicSettingsPeriodsRoute
   '/_authenticated/academic-settings/subjects': typeof AuthenticatedAcademicSettingsSubjectsRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/_authenticated/gestion/alumnos': typeof AuthenticatedGestionAlumnosRoute
+  '/_authenticated/gestion/colegios': typeof AuthenticatedGestionColegiosRouteWithChildren
+  '/_authenticated/gestion/ponderado': typeof AuthenticatedGestionPonderadoRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -293,15 +452,27 @@ export interface FileRoutesById {
   '/_authenticated/academic-settings/': typeof AuthenticatedAcademicSettingsIndexRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/gestion/': typeof AuthenticatedGestionIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/_authenticated/teams/': typeof AuthenticatedTeamsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/planillas/$subjectId/$gradeId': typeof AuthenticatedPlanillasSubjectIdGradeIdRouteRoute
+  '/_authenticated/gestion/colegios/': typeof AuthenticatedGestionColegiosIndexRoute
+  '/_authenticated/gestion/colegios/$colegio/alumnosId/academic-settings': typeof AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRoute
+  '/_authenticated/gestion/colegios/$colegioId/academic-settings/alumnos': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRoute
+  '/_authenticated/gestion/colegios/$colegioId/academic-settings/assignments': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRoute
+  '/_authenticated/gestion/colegios/$colegioId/academic-settings/grades': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRoute
+  '/_authenticated/gestion/colegios/$colegioId/academic-settings/subjects': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRoute
+  '/_authenticated/gestion/colegios/$colegioId/academic-settings/weights': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRoute
+  '/_authenticated/gestion/colegios/$colegioId/academic-settings/': typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/gradebook'
     | '/planillas'
     | '/settings'
     | '/forgot-password'
@@ -314,11 +485,15 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/planillas/simple-test'
+    | '/planillas/test'
     | '/academic-settings/assignments'
     | '/academic-settings/grades'
-    | '/academic-settings/periods'
     | '/academic-settings/subjects'
     | '/errors/$error'
+    | '/gestion/alumnos'
+    | '/gestion/colegios'
+    | '/gestion/ponderado'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -326,12 +501,24 @@ export interface FileRouteTypes {
     | '/academic-settings/'
     | '/apps/'
     | '/chats/'
+    | '/gestion/'
     | '/help-center/'
     | '/settings/'
     | '/tasks/'
+    | '/teams/'
     | '/users/'
+    | '/planillas/$subjectId/$gradeId'
+    | '/gestion/colegios/'
+    | '/gestion/colegios/$colegio/alumnosId/academic-settings'
+    | '/gestion/colegios/$colegioId/academic-settings/alumnos'
+    | '/gestion/colegios/$colegioId/academic-settings/assignments'
+    | '/gestion/colegios/$colegioId/academic-settings/grades'
+    | '/gestion/colegios/$colegioId/academic-settings/subjects'
+    | '/gestion/colegios/$colegioId/academic-settings/weights'
+    | '/gestion/colegios/$colegioId/academic-settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/gradebook'
     | '/planillas'
     | '/forgot-password'
     | '/otp'
@@ -344,11 +531,14 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/planillas/simple-test'
+    | '/planillas/test'
     | '/academic-settings/assignments'
     | '/academic-settings/grades'
-    | '/academic-settings/periods'
     | '/academic-settings/subjects'
     | '/errors/$error'
+    | '/gestion/alumnos'
+    | '/gestion/ponderado'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -356,13 +546,25 @@ export interface FileRouteTypes {
     | '/academic-settings'
     | '/apps'
     | '/chats'
+    | '/gestion'
     | '/help-center'
     | '/settings'
     | '/tasks'
+    | '/teams'
     | '/users'
+    | '/planillas/$subjectId/$gradeId'
+    | '/gestion/colegios'
+    | '/gestion/colegios/$colegio/alumnosId/academic-settings'
+    | '/gestion/colegios/$colegioId/academic-settings/alumnos'
+    | '/gestion/colegios/$colegioId/academic-settings/assignments'
+    | '/gestion/colegios/$colegioId/academic-settings/grades'
+    | '/gestion/colegios/$colegioId/academic-settings/subjects'
+    | '/gestion/colegios/$colegioId/academic-settings/weights'
+    | '/gestion/colegios/$colegioId/academic-settings'
   id:
     | '__root__'
     | '/_authenticated'
+    | '/_authenticated/gradebook'
     | '/_authenticated/planillas'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
@@ -376,11 +578,15 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/planillas/simple-test'
+    | '/_authenticated/planillas/test'
     | '/_authenticated/academic-settings/assignments'
     | '/_authenticated/academic-settings/grades'
-    | '/_authenticated/academic-settings/periods'
     | '/_authenticated/academic-settings/subjects'
     | '/_authenticated/errors/$error'
+    | '/_authenticated/gestion/alumnos'
+    | '/_authenticated/gestion/colegios'
+    | '/_authenticated/gestion/ponderado'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
@@ -388,10 +594,21 @@ export interface FileRouteTypes {
     | '/_authenticated/academic-settings/'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
+    | '/_authenticated/gestion/'
     | '/_authenticated/help-center/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
+    | '/_authenticated/teams/'
     | '/_authenticated/users/'
+    | '/_authenticated/planillas/$subjectId/$gradeId'
+    | '/_authenticated/gestion/colegios/'
+    | '/_authenticated/gestion/colegios/$colegio/alumnosId/academic-settings'
+    | '/_authenticated/gestion/colegios/$colegioId/academic-settings/alumnos'
+    | '/_authenticated/gestion/colegios/$colegioId/academic-settings/assignments'
+    | '/_authenticated/gestion/colegios/$colegioId/academic-settings/grades'
+    | '/_authenticated/gestion/colegios/$colegioId/academic-settings/subjects'
+    | '/_authenticated/gestion/colegios/$colegioId/academic-settings/weights'
+    | '/_authenticated/gestion/colegios/$colegioId/academic-settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -508,11 +725,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlanillasRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/gradebook': {
+      id: '/_authenticated/gradebook'
+      path: '/gradebook'
+      fullPath: '/gradebook'
+      preLoaderRoute: typeof AuthenticatedGradebookRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/users'
       fullPath: '/users/'
       preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/teams/': {
+      id: '/_authenticated/teams/'
+      path: '/teams'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof AuthenticatedTeamsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tasks/': {
@@ -534,6 +765,13 @@ declare module '@tanstack/react-router' {
       path: '/help-center'
       fullPath: '/help-center/'
       preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/gestion/': {
+      id: '/_authenticated/gestion/'
+      path: '/gestion'
+      fullPath: '/gestion/'
+      preLoaderRoute: typeof AuthenticatedGestionIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/chats/': {
@@ -585,6 +823,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/gestion/ponderado': {
+      id: '/_authenticated/gestion/ponderado'
+      path: '/gestion/ponderado'
+      fullPath: '/gestion/ponderado'
+      preLoaderRoute: typeof AuthenticatedGestionPonderadoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/gestion/colegios': {
+      id: '/_authenticated/gestion/colegios'
+      path: '/gestion/colegios'
+      fullPath: '/gestion/colegios'
+      preLoaderRoute: typeof AuthenticatedGestionColegiosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/gestion/alumnos': {
+      id: '/_authenticated/gestion/alumnos'
+      path: '/gestion/alumnos'
+      fullPath: '/gestion/alumnos'
+      preLoaderRoute: typeof AuthenticatedGestionAlumnosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/errors/$error': {
       id: '/_authenticated/errors/$error'
       path: '/errors/$error'
@@ -597,13 +856,6 @@ declare module '@tanstack/react-router' {
       path: '/academic-settings/subjects'
       fullPath: '/academic-settings/subjects'
       preLoaderRoute: typeof AuthenticatedAcademicSettingsSubjectsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/academic-settings/periods': {
-      id: '/_authenticated/academic-settings/periods'
-      path: '/academic-settings/periods'
-      fullPath: '/academic-settings/periods'
-      preLoaderRoute: typeof AuthenticatedAcademicSettingsPeriodsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/academic-settings/grades': {
@@ -620,8 +872,105 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAcademicSettingsAssignmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/planillas/test': {
+      id: '/_authenticated/planillas/test'
+      path: '/test'
+      fullPath: '/planillas/test'
+      preLoaderRoute: typeof AuthenticatedPlanillasTestRouteRouteImport
+      parentRoute: typeof AuthenticatedPlanillasRouteRoute
+    }
+    '/_authenticated/planillas/simple-test': {
+      id: '/_authenticated/planillas/simple-test'
+      path: '/simple-test'
+      fullPath: '/planillas/simple-test'
+      preLoaderRoute: typeof AuthenticatedPlanillasSimpleTestRouteRouteImport
+      parentRoute: typeof AuthenticatedPlanillasRouteRoute
+    }
+    '/_authenticated/gestion/colegios/': {
+      id: '/_authenticated/gestion/colegios/'
+      path: '/'
+      fullPath: '/gestion/colegios/'
+      preLoaderRoute: typeof AuthenticatedGestionColegiosIndexRouteImport
+      parentRoute: typeof AuthenticatedGestionColegiosRoute
+    }
+    '/_authenticated/planillas/$subjectId/$gradeId': {
+      id: '/_authenticated/planillas/$subjectId/$gradeId'
+      path: '/$subjectId/$gradeId'
+      fullPath: '/planillas/$subjectId/$gradeId'
+      preLoaderRoute: typeof AuthenticatedPlanillasSubjectIdGradeIdRouteRouteImport
+      parentRoute: typeof AuthenticatedPlanillasRouteRoute
+    }
+    '/_authenticated/gestion/colegios/$colegioId/academic-settings/': {
+      id: '/_authenticated/gestion/colegios/$colegioId/academic-settings/'
+      path: '/$colegioId/academic-settings'
+      fullPath: '/gestion/colegios/$colegioId/academic-settings/'
+      preLoaderRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedGestionColegiosRoute
+    }
+    '/_authenticated/gestion/colegios/$colegioId/academic-settings/weights': {
+      id: '/_authenticated/gestion/colegios/$colegioId/academic-settings/weights'
+      path: '/$colegioId/academic-settings/weights'
+      fullPath: '/gestion/colegios/$colegioId/academic-settings/weights'
+      preLoaderRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRouteImport
+      parentRoute: typeof AuthenticatedGestionColegiosRoute
+    }
+    '/_authenticated/gestion/colegios/$colegioId/academic-settings/subjects': {
+      id: '/_authenticated/gestion/colegios/$colegioId/academic-settings/subjects'
+      path: '/$colegioId/academic-settings/subjects'
+      fullPath: '/gestion/colegios/$colegioId/academic-settings/subjects'
+      preLoaderRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRouteImport
+      parentRoute: typeof AuthenticatedGestionColegiosRoute
+    }
+    '/_authenticated/gestion/colegios/$colegioId/academic-settings/grades': {
+      id: '/_authenticated/gestion/colegios/$colegioId/academic-settings/grades'
+      path: '/$colegioId/academic-settings/grades'
+      fullPath: '/gestion/colegios/$colegioId/academic-settings/grades'
+      preLoaderRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRouteImport
+      parentRoute: typeof AuthenticatedGestionColegiosRoute
+    }
+    '/_authenticated/gestion/colegios/$colegioId/academic-settings/assignments': {
+      id: '/_authenticated/gestion/colegios/$colegioId/academic-settings/assignments'
+      path: '/$colegioId/academic-settings/assignments'
+      fullPath: '/gestion/colegios/$colegioId/academic-settings/assignments'
+      preLoaderRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRouteImport
+      parentRoute: typeof AuthenticatedGestionColegiosRoute
+    }
+    '/_authenticated/gestion/colegios/$colegioId/academic-settings/alumnos': {
+      id: '/_authenticated/gestion/colegios/$colegioId/academic-settings/alumnos'
+      path: '/$colegioId/academic-settings/alumnos'
+      fullPath: '/gestion/colegios/$colegioId/academic-settings/alumnos'
+      preLoaderRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRouteImport
+      parentRoute: typeof AuthenticatedGestionColegiosRoute
+    }
+    '/_authenticated/gestion/colegios/$colegio/alumnosId/academic-settings': {
+      id: '/_authenticated/gestion/colegios/$colegio/alumnosId/academic-settings'
+      path: '/$colegio/alumnosId/academic-settings'
+      fullPath: '/gestion/colegios/$colegio/alumnosId/academic-settings'
+      preLoaderRoute: typeof AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRouteImport
+      parentRoute: typeof AuthenticatedGestionColegiosRoute
+    }
   }
 }
+
+interface AuthenticatedPlanillasRouteRouteChildren {
+  AuthenticatedPlanillasSimpleTestRouteRoute: typeof AuthenticatedPlanillasSimpleTestRouteRoute
+  AuthenticatedPlanillasTestRouteRoute: typeof AuthenticatedPlanillasTestRouteRoute
+  AuthenticatedPlanillasSubjectIdGradeIdRouteRoute: typeof AuthenticatedPlanillasSubjectIdGradeIdRouteRoute
+}
+
+const AuthenticatedPlanillasRouteRouteChildren: AuthenticatedPlanillasRouteRouteChildren =
+  {
+    AuthenticatedPlanillasSimpleTestRouteRoute:
+      AuthenticatedPlanillasSimpleTestRouteRoute,
+    AuthenticatedPlanillasTestRouteRoute: AuthenticatedPlanillasTestRouteRoute,
+    AuthenticatedPlanillasSubjectIdGradeIdRouteRoute:
+      AuthenticatedPlanillasSubjectIdGradeIdRouteRoute,
+  }
+
+const AuthenticatedPlanillasRouteRouteWithChildren =
+  AuthenticatedPlanillasRouteRoute._addFileChildren(
+    AuthenticatedPlanillasRouteRouteChildren,
+  )
 
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsAccountRoute: typeof AuthenticatedSettingsAccountRoute
@@ -646,42 +995,89 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
+interface AuthenticatedGestionColegiosRouteChildren {
+  AuthenticatedGestionColegiosIndexRoute: typeof AuthenticatedGestionColegiosIndexRoute
+  AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRoute: typeof AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRoute
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRoute
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRoute
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRoute
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRoute
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRoute
+  AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRoute: typeof AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRoute
+}
+
+const AuthenticatedGestionColegiosRouteChildren: AuthenticatedGestionColegiosRouteChildren =
+  {
+    AuthenticatedGestionColegiosIndexRoute:
+      AuthenticatedGestionColegiosIndexRoute,
+    AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRoute:
+      AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRoute,
+    AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRoute:
+      AuthenticatedGestionColegiosColegioIdAcademicSettingsAlumnosRoute,
+    AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRoute:
+      AuthenticatedGestionColegiosColegioIdAcademicSettingsAssignmentsRoute,
+    AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRoute:
+      AuthenticatedGestionColegiosColegioIdAcademicSettingsGradesRoute,
+    AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRoute:
+      AuthenticatedGestionColegiosColegioIdAcademicSettingsSubjectsRoute,
+    AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRoute:
+      AuthenticatedGestionColegiosColegioIdAcademicSettingsWeightsRoute,
+    AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRoute:
+      AuthenticatedGestionColegiosColegioIdAcademicSettingsIndexRoute,
+  }
+
+const AuthenticatedGestionColegiosRouteWithChildren =
+  AuthenticatedGestionColegiosRoute._addFileChildren(
+    AuthenticatedGestionColegiosRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedPlanillasRouteRoute: typeof AuthenticatedPlanillasRouteRoute
+  AuthenticatedGradebookRouteRoute: typeof AuthenticatedGradebookRouteRoute
+  AuthenticatedPlanillasRouteRoute: typeof AuthenticatedPlanillasRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAcademicSettingsAssignmentsRoute: typeof AuthenticatedAcademicSettingsAssignmentsRoute
   AuthenticatedAcademicSettingsGradesRoute: typeof AuthenticatedAcademicSettingsGradesRoute
-  AuthenticatedAcademicSettingsPeriodsRoute: typeof AuthenticatedAcademicSettingsPeriodsRoute
   AuthenticatedAcademicSettingsSubjectsRoute: typeof AuthenticatedAcademicSettingsSubjectsRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedGestionAlumnosRoute: typeof AuthenticatedGestionAlumnosRoute
+  AuthenticatedGestionColegiosRoute: typeof AuthenticatedGestionColegiosRouteWithChildren
+  AuthenticatedGestionPonderadoRoute: typeof AuthenticatedGestionPonderadoRoute
   AuthenticatedAcademicSettingsIndexRoute: typeof AuthenticatedAcademicSettingsIndexRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+  AuthenticatedGestionIndexRoute: typeof AuthenticatedGestionIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
+  AuthenticatedTeamsIndexRoute: typeof AuthenticatedTeamsIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedPlanillasRouteRoute: AuthenticatedPlanillasRouteRoute,
+  AuthenticatedGradebookRouteRoute: AuthenticatedGradebookRouteRoute,
+  AuthenticatedPlanillasRouteRoute:
+    AuthenticatedPlanillasRouteRouteWithChildren,
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAcademicSettingsAssignmentsRoute:
     AuthenticatedAcademicSettingsAssignmentsRoute,
   AuthenticatedAcademicSettingsGradesRoute:
     AuthenticatedAcademicSettingsGradesRoute,
-  AuthenticatedAcademicSettingsPeriodsRoute:
-    AuthenticatedAcademicSettingsPeriodsRoute,
   AuthenticatedAcademicSettingsSubjectsRoute:
     AuthenticatedAcademicSettingsSubjectsRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedGestionAlumnosRoute: AuthenticatedGestionAlumnosRoute,
+  AuthenticatedGestionColegiosRoute:
+    AuthenticatedGestionColegiosRouteWithChildren,
+  AuthenticatedGestionPonderadoRoute: AuthenticatedGestionPonderadoRoute,
   AuthenticatedAcademicSettingsIndexRoute:
     AuthenticatedAcademicSettingsIndexRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+  AuthenticatedGestionIndexRoute: AuthenticatedGestionIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
+  AuthenticatedTeamsIndexRoute: AuthenticatedTeamsIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
 }
 
