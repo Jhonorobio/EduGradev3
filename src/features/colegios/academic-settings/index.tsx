@@ -4,7 +4,6 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { BookOpen, GraduationCap, ClipboardList, ArrowLeft, Calculator } from 'lucide-react'
@@ -20,7 +19,6 @@ export function ColegioAcademicSettings() {
       <Header fixed>
         <Search />
         <div className='ms-auto flex items-center space-x-4'>
-          <ThemeSwitch />
           <ConfigDrawer />
           <ProfileDropdown />
         </div>
