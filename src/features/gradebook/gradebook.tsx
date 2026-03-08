@@ -218,7 +218,6 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
       <Header>
         <Search />
         <div className='ms-auto flex items-center gap-4'>
-          <ThemeSwitch />
           <ConfigDrawer />
           <ProfileDropdown />
         </div>

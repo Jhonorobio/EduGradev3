@@ -139,7 +139,7 @@ export async function getStudentsByGrade(gradeId: string): Promise<Student[]> {
       `)
       .eq('grade_id', gradeId)
       .eq('status', 'active')
-      .order('name', { ascending: true })
+      .order('last_name', { ascending: true })
 
     if (error) {
       console.error('Error fetching students:', error)
