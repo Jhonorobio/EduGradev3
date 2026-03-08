@@ -352,7 +352,7 @@ export async function calculateStudentAverage(
     // Calculate category averages or direct scores
     const categoryScores: Record<string, number> = {}
     
-    Object.entries(settings.category_weights).forEach(([category, weight]) => {
+    Object.entries(settings.category_weights).forEach(([category]) => {
       const categoryActivities = activities.filter(a => a.category === category)
       
       if (categoryActivities.length === 0) {

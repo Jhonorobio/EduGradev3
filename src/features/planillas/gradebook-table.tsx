@@ -13,7 +13,7 @@ import {
 import { ArrowLeft, Plus, Trash2, Edit, MoreVertical, Save } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { useStudentAverages } from '@/hooks/use-student-averages'
-import { getGradebookData, createActivity, upsertGradebookEntry, deleteActivity, getGradebookSettings } from '@/services/gradebook'
+import { getGradebookData, createActivity, upsertGradebookEntry, deleteActivity } from '@/services/gradebook'
 import { getColegioSettings } from '@/services/colegio-settings'
 import { toast } from 'sonner'
 
@@ -52,34 +52,7 @@ export function GradebookTable({ subjectId, gradeId, subjectName, gradeName, col
   }
 
   // Use student averages hook
-  const { getAverage, getClassAverage, getGradedCount } = useStudentAverages(students, activities, grades)
-
-  // Calculate category averages
-  const getCategoryAverage = (studentId: string, category: string) => {
-    const categoryActivities = activities.filter(a => a.category === category)
-    if (categoryActivities.length === 0) return 0
-    
-    let total = 0
-    let count = 0
-    categoryActivities.forEach(activity => {
-      const grade = grades[studentId]?.[activity.id]
-      if (grade && grade > 0) {
-        total += grade
-        count++
-      }
-    })
-    
-    if (count === 0) return 0
-    return (total / count) * 10 // Convert to percentage (assuming 1-10 scale)
-  }
-
-  // Group activities by category
-  const activitiesByCategory = {
-    apuntes_tareas: activities.filter(a => a.category === 'apuntes_tareas'),
-    talleres_exposiciones: activities.filter(a => a.category === 'talleres_exposiciones'),
-    actitudinal: activities.filter(a => a.category === 'actitudinal'),
-    evaluacion: activities.filter(a => a.category === 'evaluacion'),
-  }
+  const { getAverage } = useStudentAverages(students, activities, grades)
 
   // Calculate total columns: # + Estudiante + filtered activities + Actitudinal + Evaluacion + Nota Final
   const filteredActivities = activities.filter(a => a.category !== 'actitudinal' && a.category !== 'evaluacion')
@@ -233,7 +206,6 @@ export function GradebookTable({ subjectId, gradeId, subjectName, gradeName, col
       const maxScore = getEffectiveMaxScore()
 
       // Determinar la categoría basada en el tipo seleccionado
-      const apuntesTypes = colegioSettings?.activity_types?.apuntes_tareas || []
       const talleresTypes = colegioSettings?.activity_types?.talleres_exposiciones || []
       
       let category = 'apuntes_tareas' // por defecto
@@ -311,7 +283,7 @@ export function GradebookTable({ subjectId, gradeId, subjectName, gradeName, col
             // Guardar todas las calificaciones pendientes
             let savedCount = 0
             for (const [studentId, activities] of Object.entries(grades)) {
-              for (const [activityId, score] of Object.entries(activities as any)) {
+              for (const [activityId, score] of Object.entries(activities as Record<string, number>)) {
                 if (score > 0) {
                   try {
                     await upsertGradebookEntry({
@@ -545,7 +517,6 @@ export function GradebookTable({ subjectId, gradeId, subjectName, gradeName, col
                     value={newActivity.type}
                     onValueChange={(value) => {
                       // Determinar la categoría basada en el tipo seleccionado
-                      const apuntesTypes = colegioSettings?.activity_types?.apuntes_tareas || []
                       const talleresTypes = colegioSettings?.activity_types?.talleres_exposiciones || []
 
                       let category = 'apuntes_tareas'
@@ -602,7 +573,6 @@ export function GradebookTable({ subjectId, gradeId, subjectName, gradeName, col
                   value={editingActivity.description || editingActivity.category}
                   onValueChange={(value) => {
                     // Determinar la categoría basada en el tipo seleccionado
-                    const apuntesTypes = colegioSettings?.activity_types?.apuntes_tareas || []
                     const talleresTypes = colegioSettings?.activity_types?.talleres_exposiciones || []
                     
                     let category = 'apuntes_tareas'
