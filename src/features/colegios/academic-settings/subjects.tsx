@@ -16,7 +16,7 @@ import { getSubjectsByColegio, createSubject, updateSubject, deleteSubject, Subj
 import { toast } from 'sonner'
 import { Link } from '@tanstack/react-router'
 
-const route = getRouteApi('/_authenticated/gestion/colegios/$colegioId/academic-settings/subjects/')
+const route = getRouteApi('/_authenticated/gestion/colegios/$colegioId/academic-settings/subjects')
 
 export function ColegioSubjects() {
   const { colegioId } = route.useParams()

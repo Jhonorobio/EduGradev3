@@ -18,13 +18,13 @@ export interface Assignment {
 
 export async function getAssignments(colegioId?: string): Promise<Assignment[]> {
   try {
+    // Get all assignments (without grade join, we'll handle it separately)
     let query = supabase
       .from('assignments')
       .select(`
         *,
         teacher:users(name),
-        subject:subjects(name),
-        grade:grades(name)
+        subject:subjects(name)
       `)
       .order('created_at', { ascending: false })
 
@@ -40,12 +40,46 @@ export async function getAssignments(colegioId?: string): Promise<Assignment[]> 
       throw new Error('Error al cargar las asignaciones')
     }
 
-    return (data || []).map((assignment: any) => ({
-      ...assignment,
-      teacher_name: assignment.teacher?.name,
-      subject_name: assignment.subject?.name,
-      grade_name: assignment.grade?.name
-    }))
+    // Get all grades to map names
+    let gradesQuery = supabase
+      .from('grades')
+      .select('id, name')
+    
+    if (colegioId) {
+      gradesQuery = gradesQuery.eq('colegio_id', colegioId)
+    }
+    
+    const { data: allGrades, error: gradesError } = await gradesQuery
+
+    if (gradesError) {
+      console.error('Error fetching grades:', gradesError)
+    }
+
+    const gradeMap = new Map((allGrades || []).map(g => [g.id, g.name]))
+
+    return (data || []).map((assignment: any) => {
+      // Get names for all grades in grade_ids
+      const gradeIds = assignment.grade_ids || []
+      const gradeNames = gradeIds
+        .map((id: string) => gradeMap.get(id))
+        .filter(Boolean)
+      
+      // Debug log
+      if (gradeIds.length > 0 && gradeNames.length === 0) {
+        console.log('Assignment with grade_ids but no names found:', {
+          assignmentId: assignment.id,
+          gradeIds: gradeIds,
+          availableGrades: Array.from(gradeMap.keys())
+        })
+      }
+
+      return {
+        ...assignment,
+        teacher_name: assignment.teacher?.name,
+        subject_name: assignment.subject?.name,
+        grade_name: gradeNames.join(', ') || 'Sin grado'
+      }
+    })
   } catch (error) {
     console.error('Unexpected error fetching assignments:', error)
     throw new Error('Error inesperado al cargar las asignaciones')
@@ -60,13 +94,13 @@ export async function createAssignment(assignment: Omit<Assignment, 'id' | 'crea
         teacher_id: assignment.teacher_id,
         subject_id: assignment.subject_id,
         grade_id: assignment.grade_id,
+        grade_ids: assignment.grade_ids || [assignment.grade_id],
         colegio_id: assignment.colegio_id
       })
       .select(`
         *,
         teacher:users(name),
-        subject:subjects(name),
-        grade:grades(name)
+        subject:subjects(name)
       `)
       .single()
 
@@ -100,7 +134,11 @@ export async function updateAssignment(id: string, assignment: Partial<Assignmen
     if (assignment.teacher_id !== undefined) updateData.teacher_id = assignment.teacher_id
     if (assignment.subject_id !== undefined) updateData.subject_id = assignment.subject_id
     if (assignment.grade_id !== undefined) updateData.grade_id = assignment.grade_id
-    if (assignment.grade_ids !== undefined) updateData.grade_ids = assignment.grade_ids
+    if (assignment.grade_ids !== undefined) {
+      updateData.grade_ids = assignment.grade_ids
+      // Actualizar también grade_id (primer elemento del array)
+      updateData.grade_id = assignment.grade_ids[0] || null
+    }
     if (assignment.colegio_id !== undefined) updateData.colegio_id = assignment.colegio_id
 
     const { data, error } = await supabase
@@ -110,8 +148,7 @@ export async function updateAssignment(id: string, assignment: Partial<Assignmen
       .select(`
         *,
         teacher:users(name),
-        subject:subjects(name),
-        grade:grades(name)
+        subject:subjects(name)
       `)
       .single()
 

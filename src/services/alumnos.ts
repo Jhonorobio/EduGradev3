@@ -228,3 +228,51 @@ export async function deleteAlumno(id: string): Promise<void> {
     throw new Error('Error inesperado al eliminar el alumno')
   }
 }
+
+export async function getAlumnosByGrade(gradeId: string, colegioId: string): Promise<Alumno[]> {
+  if (!supabase) {
+    throw new Error('Supabase no está configurado')
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('alumnos')
+      .select(`
+        id,
+        name,
+        last_name,
+        colegio_id,
+        colegios!inner(name, code),
+        grades!inner(name, level),
+        status,
+        created_at,
+        updated_at
+      `)
+      .eq('grade_id', gradeId)
+      .eq('colegio_id', colegioId)
+      .eq('status', 'active')
+      .order('last_name')
+      .order('name')
+
+    if (error) {
+      console.error('Error fetching alumnos by grade:', error)
+      throw new Error(`Error al cargar los alumnos: ${error.message}`)
+    }
+
+    return (data || []).map((alumno: any) => ({
+      id: alumno.id,
+      name: alumno.name,
+      last_name: alumno.last_name,
+      colegio_id: alumno.colegio_id,
+      colegio_name: alumno.colegios?.name || 'Colegio Desconocido',
+      grade_id: alumno.grades?.id || 'Grado Desconocido',
+      grade_name: alumno.grades?.name || 'Grado Desconocido',
+      status: alumno.status,
+      created_at: alumno.created_at,
+      updated_at: alumno.updated_at,
+    }))
+  } catch (error) {
+    console.error('Unexpected error fetching alumnos by grade:', error)
+    throw new Error('Error inesperado al cargar los alumnos')
+  }
+}

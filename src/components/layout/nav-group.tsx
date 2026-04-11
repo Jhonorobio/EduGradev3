@@ -57,6 +57,7 @@ export function NavGroup({ title, items }: NavGroupProps) {
       '/gestion/alumnos': 'canAccessAlumnos',
       '/gestion/ponderado': 'canAccessPonderado',
       '/planillas': 'canAccessPlanillas',
+      '/informe-cualitativo': 'canAccessPlanillas',
       '/dashboard': 'canAccessDashboard',
     }
 

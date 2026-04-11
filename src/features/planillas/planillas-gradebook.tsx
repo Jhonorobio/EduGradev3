@@ -74,17 +74,8 @@ export function PlanillasGradebook({ subjectId, gradeId, subjectName, gradeName,
         }
       }
 
-      // Initialize grades state from entries
-      const gradesMap: Record<string, Record<string, number>> = {}
-      data.entries.forEach(entry => {
-        if (entry.score !== undefined) {
-          if (!gradesMap[entry.student_id]) {
-            gradesMap[entry.student_id] = {}
-          }
-          gradesMap[entry.student_id][entry.activity_id] = entry.score
-        }
-      })
-      setGrades(gradesMap)
+      // Set grades directly from gradebook data
+      setGrades(data.grades || {})
     } catch (error) {
       console.error('Error loading gradebook data:', error)
       toast.error('Error al cargar los datos de la planilla')

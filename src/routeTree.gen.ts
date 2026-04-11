@@ -23,6 +23,7 @@ import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedPlanillasRouteRouteImport } from './routes/_authenticated/planillas/route'
+import { Route as AuthenticatedInformeCualitativoRouteRouteImport } from './routes/_authenticated/informe-cualitativo/route'
 import { Route as AuthenticatedGradebookRouteRouteImport } from './routes/_authenticated/gradebook/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTeamsIndexRouteImport } from './routes/_authenticated/teams/index'
@@ -125,6 +126,12 @@ const AuthenticatedPlanillasRouteRoute =
   AuthenticatedPlanillasRouteRouteImport.update({
     id: '/planillas',
     path: '/planillas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInformeCualitativoRouteRoute =
+  AuthenticatedInformeCualitativoRouteRouteImport.update({
+    id: '/informe-cualitativo',
+    path: '/informe-cualitativo',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedGradebookRouteRoute =
@@ -330,6 +337,7 @@ const AuthenticatedGestionColegiosColegioAlumnosIdAcademicSettingsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/gradebook': typeof AuthenticatedGradebookRouteRoute
+  '/informe-cualitativo': typeof AuthenticatedInformeCualitativoRouteRoute
   '/planillas': typeof AuthenticatedPlanillasRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
@@ -376,6 +384,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/gradebook': typeof AuthenticatedGradebookRouteRoute
+  '/informe-cualitativo': typeof AuthenticatedInformeCualitativoRouteRoute
   '/planillas': typeof AuthenticatedPlanillasRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -423,6 +432,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/gradebook': typeof AuthenticatedGradebookRouteRoute
+  '/_authenticated/informe-cualitativo': typeof AuthenticatedInformeCualitativoRouteRoute
   '/_authenticated/planillas': typeof AuthenticatedPlanillasRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
@@ -473,6 +483,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/gradebook'
+    | '/informe-cualitativo'
     | '/planillas'
     | '/settings'
     | '/forgot-password'
@@ -519,6 +530,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/gradebook'
+    | '/informe-cualitativo'
     | '/planillas'
     | '/forgot-password'
     | '/otp'
@@ -565,6 +577,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/_authenticated/gradebook'
+    | '/_authenticated/informe-cualitativo'
     | '/_authenticated/planillas'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
@@ -723,6 +736,13 @@ declare module '@tanstack/react-router' {
       path: '/planillas'
       fullPath: '/planillas'
       preLoaderRoute: typeof AuthenticatedPlanillasRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/informe-cualitativo': {
+      id: '/_authenticated/informe-cualitativo'
+      path: '/informe-cualitativo'
+      fullPath: '/informe-cualitativo'
+      preLoaderRoute: typeof AuthenticatedInformeCualitativoRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/gradebook': {
@@ -1033,6 +1053,7 @@ const AuthenticatedGestionColegiosRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedGradebookRouteRoute: typeof AuthenticatedGradebookRouteRoute
+  AuthenticatedInformeCualitativoRouteRoute: typeof AuthenticatedInformeCualitativoRouteRoute
   AuthenticatedPlanillasRouteRoute: typeof AuthenticatedPlanillasRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -1055,6 +1076,8 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGradebookRouteRoute: AuthenticatedGradebookRouteRoute,
+  AuthenticatedInformeCualitativoRouteRoute:
+    AuthenticatedInformeCualitativoRouteRoute,
   AuthenticatedPlanillasRouteRoute:
     AuthenticatedPlanillasRouteRouteWithChildren,
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,

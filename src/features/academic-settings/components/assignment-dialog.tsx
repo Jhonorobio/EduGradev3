@@ -4,32 +4,32 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
 import { Assignment } from '@/services/assignments'
 import { getTeachers } from '@/services/users'
 import { getSubjects } from '@/services/subjects'
-import { getGrades } from '@/services/grades'
+import { getGradesByColegio } from '@/services/grades'
 import { User } from '@/types/auth'
 import { Subject } from '@/services/subjects'
 import { Grade } from '@/services/grades'
+import { X, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface AssignmentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   assignment?: Assignment | null
-  onSave: (assignment: Omit<Assignment, 'id' | 'created_at' | 'updated_at' | 'teacherName' | 'subjectName' | 'gradeName'>) => void
-  onUpdate?: (id: string, assignment: Partial<Assignment>) => void
+  onSave: (assignment: any) => void
+  saving?: boolean
+  colegioId: string
 }
 
-export function AssignmentDialog({ open, onOpenChange, assignment, onSave, onUpdate }: AssignmentDialogProps) {
+export function AssignmentDialog({ open, onOpenChange, assignment, onSave, saving, colegioId }: AssignmentDialogProps) {
   const [formData, setFormData] = useState({
-    teacherId: '',
-    subjectId: '',
-    gradeId: '',
-    section: '',
-    period: 1,
-    status: 'active' as 'active' | 'pending' | 'inactive',
-    schedule: ''
+    teacher_id: '',
+    subject_id: '',
+    grade_ids: [] as string[],
+    colegio_id: ''
   })
   const [teachers, setTeachers] = useState<User[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
@@ -37,16 +37,18 @@ export function AssignmentDialog({ open, onOpenChange, assignment, onSave, onUpd
   const [loadingTeachers, setLoadingTeachers] = useState(true)
   const [loadingSubjects, setLoadingSubjects] = useState(true)
   const [loadingGrades, setLoadingGrades] = useState(true)
+  const [showGradesDropdown, setShowGradesDropdown] = useState(false)
 
   const isEditing = !!assignment
 
   useEffect(() => {
     const loadData = async () => {
+      if (!colegioId) return
       try {
         const [teachersData, subjectsData, gradesData] = await Promise.all([
           getTeachers(),
           getSubjects(),
-          getGrades()
+          getGradesByColegio(colegioId)
         ])
         setTeachers(teachersData)
         setSubjects(subjectsData)
@@ -68,37 +70,62 @@ export function AssignmentDialog({ open, onOpenChange, assignment, onSave, onUpd
   useEffect(() => {
     if (assignment) {
       setFormData({
-        teacherId: assignment.teacherId,
-        subjectId: assignment.subjectId,
-        gradeId: assignment.gradeId,
-        section: assignment.section,
-        period: assignment.period,
-        status: assignment.status,
-        schedule: assignment.schedule
+        teacher_id: assignment.teacher_id || '',
+        subject_id: assignment.subject_id || '',
+        grade_ids: assignment.grade_ids || [],
+        colegio_id: assignment.colegio_id || ''
       })
     } else {
       setFormData({
-        teacherId: '',
-        subjectId: '',
-        gradeId: '',
-        section: '',
-        period: 1,
-        status: 'active',
-        schedule: ''
+        teacher_id: '',
+        subject_id: '',
+        grade_ids: [],
+        colegio_id: ''
       })
     }
   }, [assignment, open])
 
+  const handleGradeToggle = (gradeId: string) => {
+    setFormData(prev => {
+      const currentGrades = prev.grade_ids
+      if (currentGrades.includes(gradeId)) {
+        return { ...prev, grade_ids: currentGrades.filter(id => id !== gradeId) }
+      } else {
+        return { ...prev, grade_ids: [...currentGrades, gradeId] }
+      }
+    })
+  }
+
+  const handleRemoveGrade = (gradeId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      grade_ids: prev.grade_ids.filter(id => id !== gradeId)
+    }))
+  }
+
+  const getSelectedGradeNames = () => {
+    return formData.grade_ids.map(id => {
+      const grade = grades.find(g => g.id === id)
+      return grade?.name || id
+    })
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.teacherId || !formData.subjectId || !formData.gradeId || !formData.section.trim()) {
+    if (!formData.teacher_id || !formData.subject_id || formData.grade_ids.length === 0) {
       return
     }
 
-    if (isEditing && onUpdate && assignment) {
-      onUpdate(assignment.id, formData)
+    const dataToSave = {
+      ...formData,
+      // Para compatibilidad con la BD, usamos el primer grado como grade_id
+      grade_id: formData.grade_ids[0]
+    }
+
+    if (isEditing && assignment) {
+      onSave({ ...dataToSave, id: assignment.id })
     } else {
-      onSave(formData)
+      onSave(dataToSave)
     }
     onOpenChange(false)
   }
@@ -111,9 +138,9 @@ export function AssignmentDialog({ open, onOpenChange, assignment, onSave, onUpd
             {isEditing ? 'Editar Asignación' : 'Nueva Asignación'}
           </DialogTitle>
           <DialogDescription>
-            {isEditing 
+            {isEditing
               ? 'Modifica los datos de la asignación seleccionada.'
-              : 'Completa los datos para crear una nueva asignación.'
+              : 'Selecciona el profesor, la materia y los grados que enseñará.'
             }
           </DialogDescription>
         </DialogHeader>
@@ -123,8 +150,8 @@ export function AssignmentDialog({ open, onOpenChange, assignment, onSave, onUpd
               <div className="space-y-2">
                 <Label htmlFor="teacher">Profesor</Label>
                 <Select
-                  value={formData.teacherId}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, teacherId: value }))}
+                  value={formData.teacher_id}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, teacher_id: value }))}
                   disabled={loadingTeachers}
                 >
                   <SelectTrigger>
@@ -147,8 +174,8 @@ export function AssignmentDialog({ open, onOpenChange, assignment, onSave, onUpd
               <div className="space-y-2">
                 <Label htmlFor="subject">Materia</Label>
                 <Select
-                  value={formData.subjectId}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, subjectId: value }))}
+                  value={formData.subject_id}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, subject_id: value }))}
                   disabled={loadingSubjects}
                 >
                   <SelectTrigger>
@@ -169,93 +196,71 @@ export function AssignmentDialog({ open, onOpenChange, assignment, onSave, onUpd
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="grade">Grado</Label>
-                <Select
-                  value={formData.gradeId}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, gradeId: value }))}
-                  disabled={loadingGrades}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar grado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {grades.map((grade) => (
-                      <SelectItem key={grade.id} value={grade.id}>
-                        {grade.name}
-                      </SelectItem>
-                    ))}
-                    {grades.length === 0 && !loadingGrades && (
-                      <SelectItem value="no-grades" disabled>
-                        No hay grados disponibles
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="section">Sección</Label>
-                <Input
-                  id="section"
-                  value={formData.section}
-                  onChange={(e) => setFormData(prev => ({ ...prev, section: e.target.value }))}
-                  placeholder="Ej: A, B, C"
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="period">Periodo</Label>
-                <Select
-                  value={formData.period.toString()}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, period: parseInt(value) }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar periodo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">Primer Periodo</SelectItem>
-                    <SelectItem value="2">Segundo Periodo</SelectItem>
-                    <SelectItem value="3">Tercer Periodo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Estado</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value: 'active' | 'pending' | 'inactive') => setFormData(prev => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Activa</SelectItem>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="inactive">Inactiva</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="schedule">Horario</Label>
-              <Textarea
-                id="schedule"
-                value={formData.schedule}
-                onChange={(e) => setFormData(prev => ({ ...prev, schedule: e.target.value }))}
-                placeholder="Ej: Lunes, Miércoles, Viernes 8:00-9:30"
-                rows={2}
-              />
+              <Label>Grados</Label>
+              <div className="border rounded-md p-3">
+                <div 
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => setShowGradesDropdown(!showGradesDropdown)}
+                >
+                  <div className="flex flex-wrap gap-1">
+                    {formData.grade_ids.length === 0 ? (
+                      <span className="text-muted-foreground text-sm">Seleccionar grados...</span>
+                    ) : (
+                      getSelectedGradeNames().map((name, idx) => (
+                        <Badge key={idx} variant="secondary" className="flex items-center gap-1">
+                          {name}
+                          <X 
+                            className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRemoveGrade(formData.grade_ids[idx])
+                            }}
+                          />
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                  {showGradesDropdown ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
+                
+                {showGradesDropdown && (
+                  <div className="mt-3 pt-3 border-t max-h-[200px] overflow-y-auto">
+                    <div className="space-y-2">
+                      {grades.map((grade) => (
+                        <div key={grade.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`grade-${grade.id}`}
+                            checked={formData.grade_ids.includes(grade.id)}
+                            onCheckedChange={() => handleGradeToggle(grade.id)}
+                          />
+                          <Label 
+                            htmlFor={`grade-${grade.id}`}
+                            className="text-sm cursor-pointer"
+                          >
+                            {grade.name}
+                          </Label>
+                        </div>
+                      ))}
+                      {grades.length === 0 && !loadingGrades && (
+                        <p className="text-sm text-muted-foreground">No hay grados disponibles</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Selecciona uno o más grados para esta asignación
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit">
-              {isEditing ? 'Actualizar' : 'Crear'}
+            <Button type="submit" disabled={saving || formData.grade_ids.length === 0}>
+              {saving ? 'Guardando...' : (isEditing ? 'Actualizar' : 'Crear')}
             </Button>
           </DialogFooter>
         </form>

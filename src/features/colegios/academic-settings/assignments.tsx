@@ -18,7 +18,7 @@ import { getGradesByColegio } from '@/services/grades'
 import { toast } from 'sonner'
 import { Link } from '@tanstack/react-router'
 
-const route = getRouteApi('/_authenticated/gestion/colegios/$colegioId/academic-settings/assignments/')
+const route = getRouteApi('/_authenticated/gestion/colegios/$colegioId/academic-settings/assignments')
 
 export function ColegioAssignments() {
   const { colegioId } = route.useParams()
@@ -179,33 +179,42 @@ export function ColegioAssignments() {
                   <BookOpen className='h-4 w-4 text-muted-foreground' />
                   <span className='text-sm'>{assignment.subject_name || 'Sin materia'}</span>
                 </div>
-                <div className='flex items-center gap-2'>
-                  <GraduationCap className='h-4 w-4 text-muted-foreground' />
-                  <span className='text-sm'>{assignment.grade_name || 'Sin grado'}</span>
+              <div className='flex items-start gap-2'>
+                <GraduationCap className='h-4 w-4 text-muted-foreground mt-0.5' />
+                <div className='flex flex-wrap gap-1'>
+                  {assignment.grade_name ? (
+                    assignment.grade_name.split(', ').map((gradeName, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {gradeName}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className='text-sm'>Sin grado</span>
+                  )}
                 </div>
+              </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <AssignmentDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          assignment={selectedAssignment}
-          subjects={subjects}
-          grades={grades}
-          onSave={selectedAssignment ? handleUpdateAssignment : handleCreateAssignment}
-          saving={saving}
-        />
+      <AssignmentDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        assignment={selectedAssignment}
+        onSave={selectedAssignment ? handleUpdateAssignment : handleCreateAssignment}
+        saving={saving}
+        colegioId={colegioId}
+      />
 
-        <DeleteConfirmDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          title='Eliminar Asignación'
-          description={`¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer.`}
-          onConfirm={() => selectedAssignment && handleDeleteAssignment(selectedAssignment.id)}
-          deleting={deleting}
-        />
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title='Eliminar Asignación'
+        description={`¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer.`}
+        onConfirm={() => selectedAssignment && handleDeleteAssignment(selectedAssignment.id)}
+        loading={deleting}
+      />
       </Main>
     </>
   )

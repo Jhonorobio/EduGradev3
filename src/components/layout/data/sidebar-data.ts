@@ -53,11 +53,16 @@ export const sidebarData: SidebarData = {
           url: '/tasks',
           icon: ListTodo,
         },
-        {
-          title: 'Planillas',
-          url: '/planillas',
-          icon: FileText,
-        },
+    {
+      title: 'Planillas',
+      url: '/planillas',
+      icon: FileText,
+    },
+    {
+      title: 'Informe Cualitativo',
+      url: '/informe-cualitativo',
+      icon: FileText,
+    },
         {
           title: 'Aplicaciones',
           url: '/apps',

@@ -16,7 +16,7 @@ import { getGradesByColegio, createGrade, updateGrade, deleteGrade, Grade } from
 import { toast } from 'sonner'
 import { Link } from '@tanstack/react-router'
 
-const route = getRouteApi('/_authenticated/gestion/colegios/$colegioId/academic-settings/grades/')
+const route = getRouteApi('/_authenticated/gestion/colegios/$colegioId/academic-settings/grades')
 
 export function ColegioGrades() {
   const { colegioId } = route.useParams()

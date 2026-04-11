@@ -21,8 +21,22 @@ export function AppSidebar() {
   const allowedForDocente = [
     'Dashboard',
     'Planillas',
+    'Informe Cualitativo',
     'Configuración',
     'Centro de Ayuda'
+  ]
+
+  // URLs permitidas para docentes (para verificación adicional)
+  const allowedUrlsForDocente = [
+    '/',
+    '/planillas',
+    '/informe-cualitativo',
+    '/settings',
+    '/settings/account',
+    '/settings/appearance',
+    '/settings/notifications',
+    '/settings/display',
+    '/help-center'
   ]
   
   // Function to format role names

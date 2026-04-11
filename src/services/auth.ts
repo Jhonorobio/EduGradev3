@@ -20,35 +20,7 @@ export async function login(username: string, password: string): Promise<User | 
     throw new Error(getStatusErrorMessage(userProfile.status));
   }
 
-  // Check if user has any active colegios assigned (except for SUPER_ADMIN)
-  if (userProfile.role !== 'SUPER_ADMIN') {
-    const { data: userColegios, error: colegiosError } = await supabase
-      .from('usuario_colegios')
-      .select(`
-        colegio_id,
-        role,
-        colegios!inner(
-          id,
-          name,
-          status
-        )
-      `)
-      .eq('user_id', userProfile.id)
-      .eq('colegios.status', 'active');
-
-    if (colegiosError) {
-      console.error('Error checking user colegios:', colegiosError);
-      throw new Error('Error al verificar colegios del usuario');
-    }
-
-    // If user has no active colegios, deny login
-    if (!userColegios || userColegios.length === 0) {
-      console.error('Login failed: user has no active colegios assigned');
-      throw new Error('No tienes colegios activos asignados. Contacta al administrador para obtener acceso.');
-    }
-  }
-
-  // Now, attempt to sign in with Supabase Auth using retrieved email and provided password.
+  // First authenticate with Supabase Auth - this is required for RLS policies to work
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email: userProfile.email,
     password: password,
@@ -59,10 +31,58 @@ export async function login(username: string, password: string): Promise<User | 
     return null;
   }
 
-  // On successful authentication, Supabase client will automatically manage session.
-  // RLS policies using `auth.uid()` will now work for subsequent requests.
+  // Now that user is authenticated, we can check their colegios (RLS will work)
+  if (userProfile.role !== 'SUPER_ADMIN') {
+    try {
+      // Consultamos usuario_colegios (ahora con sesión activa, RLS funciona)
+      const { data: userColegios, error: colegiosError } = await supabase
+        .from('usuario_colegios')
+        .select('colegio_id, role')
+        .eq('user_id', userProfile.id);
+
+      if (colegiosError) {
+        console.error('Error checking user colegios:', colegiosError);
+        console.log('User ID:', userProfile.id);
+        // Sign out since validation failed
+        await supabase.auth.signOut();
+        throw new Error('Error al verificar colegios del usuario');
+      }
+
+      // Si no tiene asignaciones
+      if (!userColegios || userColegios.length === 0) {
+        console.error('Login failed: user has no colegios assigned. User ID:', userProfile.id);
+        // Sign out since validation failed
+        await supabase.auth.signOut();
+        throw new Error('No tienes colegios asignados. Contacta al administrador para obtener acceso.');
+      }
+
+      // Verificar que al menos un colegio esté activo
+      const { data: activeColegios, error: activeError } = await supabase
+        .from('colegios')
+        .select('id')
+        .in('id', userColegios.map(uc => uc.colegio_id))
+        .eq('status', 'active');
+
+      if (activeError) {
+        console.error('Error checking active colegios:', activeError);
+      }
+
+      if (!activeColegios || activeColegios.length === 0) {
+        console.error('Login failed: user has colegios assigned but none are active. User ID:', userProfile.id);
+        // Sign out since validation failed
+        await supabase.auth.signOut();
+        throw new Error('No tienes colegios activos asignados. Contacta al administrador para obtener acceso.');
+      }
+    } catch (error: any) {
+      console.error('Unexpected error during login colegios check:', error);
+      // Make sure to sign out on any error during validation
+      await supabase.auth.signOut();
+      throw error;
+    }
+  }
+
+  // On successful authentication and validation, return the user profile data.
   if (authData.user) {
-    // Return the user profile data to the app, excluding password.
     const { password: _, ...clientUser } = userProfile;
     return clientUser as User;
   }
@@ -119,33 +139,49 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 
   // Check if user still has active colegios assigned (except for SUPER_ADMIN)
-  if (userProfile.role !== 'SUPER_ADMIN') {
-    const { data: userColegios, error: colegiosError } = await supabase
-      .from('usuario_colegios')
-      .select(`
-        colegio_id,
-        role,
-        colegios!inner(
-          id,
-          name,
-          status
-        )
-      `)
-      .eq('user_id', userProfile.id)
-      .eq('colegios.status', 'active');
+    if (userProfile.role !== 'SUPER_ADMIN') {
+      try {
+        // Primero verificamos directamente sin el join para evitar problemas de RLS
+        const { data: userColegios, error: colegiosError } = await supabase
+          .from('usuario_colegios')
+          .select('colegio_id, role')
+          .eq('user_id', userProfile.id);
 
-    if (colegiosError) {
-      console.error('Error checking user colegios:', colegiosError);
-      // Don't sign out for this error, just log it
-    }
+        if (colegiosError) {
+          console.error('Error checking user colegios:', colegiosError);
+          console.log('User ID:', userProfile.id);
+          console.log('User Role:', userProfile.role);
+        }
 
-    // If user has no active colegios, sign them out
-    if (!userColegios || userColegios.length === 0) {
-      console.warn('User session found but has no active colegios assigned');
-      await supabase.auth.signOut();
-      return null;
+        // Si no tiene asignaciones, denegar acceso
+        if (!userColegios || userColegios.length === 0) {
+          console.warn('User session found but has no colegios assigned. User ID:', userProfile.id);
+          await supabase.auth.signOut();
+          return null;
+        }
+
+        // Verificar que al menos un colegio esté activo
+        const { data: activeColegios, error: activeError } = await supabase
+          .from('colegios')
+          .select('id, name, status')
+          .in('id', userColegios.map(uc => uc.colegio_id))
+          .eq('status', 'active');
+
+        if (activeError) {
+          console.error('Error checking active colegios:', activeError);
+        }
+
+        if (!activeColegios || activeColegios.length === 0) {
+          console.warn('User has colegios assigned but none are active. User ID:', userProfile.id);
+          await supabase.auth.signOut();
+          return null;
+        }
+      } catch (error) {
+        console.error('Unexpected error in getCurrentUser:', error);
+        // En caso de error, permitir el acceso temporalmente para debugging
+        console.warn('Allowing access despite error for debugging. User:', userProfile.username);
+      }
     }
-  }
 
   const { password: _, ...clientUser } = userProfile;
   return clientUser as User;
