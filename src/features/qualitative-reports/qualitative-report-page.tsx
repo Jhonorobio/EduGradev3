@@ -1,22 +1,29 @@
-import { Header } from '@/components/layout/header'
-import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
-import { ConfigDrawer } from '@/components/config-drawer'
 import { useState, useEffect } from 'react'
+import { getAlumnosByGrade } from '@/services/alumnos'
+import { getAssignmentsByTeacher, getGrades } from '@/services/assignments'
+import { getGradebookData, getActivities } from '@/services/gradebook'
+import {
+  getQualitativeReports,
+  upsertQualitativeReport,
+  QualitativeReport,
+  CreateQualitativeReportDTO,
+} from '@/services/qualitative-reports'
+import {
+  Users,
+  BookOpen,
+  FileText,
+  Save,
+  ChevronLeft,
+  Download,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { sortGradesEducationally } from '@/utils/grade-ordering'
 import { useAuth } from '@/hooks/use-auth'
 import { useColegio } from '@/hooks/use-colegio'
-import { getAssignmentsByTeacher, getGrades } from '@/services/assignments'
-import { getAlumnosByGrade } from '@/services/alumnos'
-import { sortGradesEducationally } from '@/utils/grade-ordering'
-import { Users, BookOpen, FileText, Save, ChevronLeft, Download } from 'lucide-react'
-import { toast } from 'sonner'
-import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -24,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -33,13 +41,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  getQualitativeReports,
-  upsertQualitativeReport,
-  QualitativeReport,
-  CreateQualitativeReportDTO,
-} from '@/services/qualitative-reports'
-import { getGradebookData, getActivities } from '@/services/gradebook'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { ConfigDrawer } from '@/components/config-drawer'
+import { Header } from '@/components/layout/header'
+import { Main } from '@/components/layout/main'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Search } from '@/components/search'
 
 interface SubjectWithGrades {
   subjectName: string
@@ -49,40 +56,48 @@ interface SubjectWithGrades {
 }
 
 interface ActivityNotDelivered {
-  name: string;
-  category: string;
-  created_at: string;
+  name: string
+  category: string
+  created_at: string
+}
+
+interface ActivityWithPositivePerformance {
+  name: string
+  category: string
+  grade: number
+  performance: 'basico' | 'alto' | 'superior'
+  created_at: string
 }
 
 interface StudentReport {
-  id: string;
-  name: string;
-  last_name: string;
-  colegio_id: string;
-  colegio_name: string;
-  grade_id: string;
-  grade_name: string;
-  status: 'active' | 'inactive' | 'suspended';
-  created_at: string;
-  updated_at?: string;
-  report?: QualitativeReport;
-  activities_not_delivered: ActivityNotDelivered[];
-  activities_json: string; // Para guardar en BD
-  insufficient_activities: string;
-  positive_notes: string;
-  behavioral_issues: 'Sí' | 'No';
-  attendance_issues: 'Sí' | 'No';
-  personal_presentation: string;
-  observations: string;
+  id: string
+  name: string
+  last_name: string
+  colegio_id: string
+  colegio_name: string
+  grade_id: string
+  grade_name: string
+  status: 'active' | 'inactive' | 'suspended'
+  created_at: string
+  updated_at?: string
+  report?: QualitativeReport
+  activities_not_delivered: ActivityNotDelivered[]
+  activities_json: string // Para guardar en BD
+  insufficient_activities: string
+  positive_notes: string
+  behavioral_issues: 'Sí' | 'No'
+  attendance_issues: 'Sí' | 'No'
+  personal_presentation: string
+  observations: string
 }
 
 interface GradeApp {
-  id: string;
-  name: string;
-  desc: string;
-  subjectId: string;
-  subjectName: string;
-  collegeId?: string;
+  id: string
+  name: string
+  desc: string
+  subjectId: string
+  subjectName: string
+  collegeId?: string
 }
 
 export function QualitativeReportPage() {
@@ -127,15 +142,15 @@ export function QualitativeReportPage() {
     try {
       const assignmentsData = await getAssignmentsByTeacher(user.id)
       const filteredAssignments = selectedColegio
-        ? assignmentsData.filter(a => a.colegio_id === selectedColegio)
+        ? assignmentsData.filter((a) => a.colegio_id === selectedColegio)
         : assignmentsData
 
       const allGrades = await getGrades()
-      const gradeMap = new Map(allGrades.map(g => [g.id, g.name]))
+      const gradeMap = new Map(allGrades.map((g) => [g.id, g.name]))
 
       const subjectsMap = new Map<string, SubjectWithGrades>()
 
-      filteredAssignments.forEach(assignment => {
+      filteredAssignments.forEach((assignment) => {
         const subjectKey = assignment.subject_id
         const subjectName = assignment.subject_name || 'Sin materia'
         const collegeId = assignment.colegio_id
@@ -145,26 +160,30 @@ export function QualitativeReportPage() {
             subjectName,
             subjectId: subjectKey,
             grades: [],
-            collegeId
+            collegeId,
           })
         }
 
-        const gradeIds = assignment.grade_ids || (assignment.grade_id ? [assignment.grade_id] : [])
+        const gradeIds =
+          assignment.grade_ids ||
+          (assignment.grade_id ? [assignment.grade_id] : [])
 
         gradeIds.forEach((gradeId: string) => {
           if (!gradeId) return
-          const existingGrade = subjectsMap.get(subjectKey)!.grades.find(g => g.id === gradeId)
+          const existingGrade = subjectsMap
+            .get(subjectKey)!
+            .grades.find((g) => g.id === gradeId)
           if (!existingGrade) {
             subjectsMap.get(subjectKey)!.grades.push({
               id: gradeId,
-              name: gradeMap.get(gradeId) || 'Sin grado'
+              name: gradeMap.get(gradeId) || 'Sin grado',
             })
           }
         })
       })
 
       const subjectsArray = Array.from(subjectsMap.values())
-      subjectsArray.forEach(subject => {
+      subjectsArray.forEach((subject) => {
         subject.grades = sortGradesEducationally(subject.grades)
       })
       subjectsArray.sort((a, b) => a.subjectName.localeCompare(b.subjectName))
@@ -182,72 +201,87 @@ export function QualitativeReportPage() {
     setIsLoading(true)
     try {
       // Cargar estudiantes del grado
-      const alumnosData = await getAlumnosByGrade(selectedGradebook.gradeId, selectedColegio)
-      
+      const alumnosData = await getAlumnosByGrade(
+        selectedGradebook.gradeId,
+        selectedColegio
+      )
+
       // Cargar actividades de la materia y grado
-      const activities = await getActivities(selectedGradebook.subjectId, selectedGradebook.gradeId)
-      
+      const activities = await getActivities(
+        selectedGradebook.subjectId,
+        selectedGradebook.gradeId
+      )
+
       // Cargar datos de la libreta para ver qué actividades tienen notas
-      const gradebookData = await getGradebookData(selectedGradebook.subjectId, selectedGradebook.gradeId)
-      
+      const gradebookData = await getGradebookData(
+        selectedGradebook.subjectId,
+        selectedGradebook.gradeId
+      )
+
       // Cargar informes cualitativos existentes
       const reports = await getQualitativeReports({
         subject_id: selectedGradebook.subjectId,
         grade_id: selectedGradebook.gradeId,
         period: parseInt(selectedPeriod),
-        academic_year: 2026
+        academic_year: 2026,
       })
 
       // Combinar estudiantes con sus informes
-      const studentsWithReports: StudentReport[] = alumnosData.map(alumno => {
-        const existingReport = reports.find(r => r.student_id === alumno.id)
+      const studentsWithReports: StudentReport[] = alumnosData.map((alumno) => {
+        const existingReport = reports.find((r) => r.student_id === alumno.id)
         const behavioralValue = existingReport?.behavioral_issues
         const attendanceValue = existingReport?.attendance_issues
-        
+
         // Calcular automáticamente las actividades sin nota
         const activitiesNotDelivered: ActivityNotDelivered[] = []
-        
+
         if (gradebookData.grades[alumno.id]) {
-          activities.forEach(activity => {
+          activities.forEach((activity) => {
             const studentGrades = gradebookData.grades[alumno.id]
-            const hasGrade = studentGrades && studentGrades[activity.id] !== undefined && studentGrades[activity.id] > 0
-            
+            const hasGrade =
+              studentGrades &&
+              studentGrades[activity.id] !== undefined &&
+              studentGrades[activity.id] > 0
+
             if (!hasGrade) {
               // Formatear la categoría para mostrar
               const categoryLabels: Record<string, string> = {
-                'apuntes_tareas': 'Apuntes/Tareas',
-                'talleres_exposiciones': 'Talleres/Exposiciones',
-                'actitudinal': 'Actitudinal',
-                'evaluacion': 'Evaluación'
+                apuntes_tareas: 'Apuntes/Tareas',
+                talleres_exposiciones: 'Talleres/Exposiciones',
+                actitudinal: 'Actitudinal',
+                evaluacion: 'Evaluación',
               }
-              
+
               // Formatear la fecha (solo mes y día)
               const activityDate = new Date(activity.created_at)
               const formattedDate = activityDate.toLocaleDateString('es-ES', {
                 day: '2-digit',
-                month: 'short'
+                month: 'short',
               })
-              
+
               activitiesNotDelivered.push({
                 name: activity.name,
-                category: categoryLabels[activity.category] || activity.category,
-                created_at: formattedDate
+                category:
+                  categoryLabels[activity.category] || activity.category,
+                created_at: formattedDate,
               })
             }
           })
         }
-        
+
         // Convertir el array a JSON string para guardar en la BD
-        const activitiesJson = activitiesNotDelivered.length > 0 
-          ? JSON.stringify(activitiesNotDelivered) 
-          : ''
-        
+        const activitiesJson =
+          activitiesNotDelivered.length > 0
+            ? JSON.stringify(activitiesNotDelivered)
+            : ''
+
         return {
           ...alumno,
           report: existingReport,
           activities_not_delivered: activitiesNotDelivered,
           activities_json: activitiesJson, // Para guardar en BD
-          insufficient_activities: existingReport?.insufficient_activities || '',
+          insufficient_activities:
+            existingReport?.insufficient_activities || '',
           positive_notes: existingReport?.positive_notes || '',
           behavioral_issues: behavioralValue === 'Sí' ? 'Sí' : 'No',
           attendance_issues: attendanceValue === 'Sí' ? 'Sí' : 'No',
@@ -271,7 +305,7 @@ export function QualitativeReportPage() {
       gradeId: gradeApp.id,
       subjectName: gradeApp.subjectName,
       gradeName: gradeApp.name,
-      collegeId: gradeApp.collegeId || selectedColegio || ''
+      collegeId: gradeApp.collegeId || selectedColegio || '',
     })
     setShowReportTable(true)
   }
@@ -282,12 +316,16 @@ export function QualitativeReportPage() {
     setStudents([])
   }
 
-  const handleInputChange = (studentId: string, field: keyof StudentReport, value: string) => {
-    setStudents(prev => prev.map(student => 
-      student.id === studentId 
-        ? { ...student, [field]: value }
-        : student
-    ))
+  const handleInputChange = (
+    studentId: string,
+    field: keyof StudentReport,
+    value: string
+  ) => {
+    setStudents((prev) =>
+      prev.map((student) =>
+        student.id === studentId ? { ...student, [field]: value } : student
+      )
+    )
   }
 
   const handleSaveReport = async (student: StudentReport) => {
@@ -310,11 +348,13 @@ export function QualitativeReportPage() {
         attendance_issues: student.attendance_issues,
         personal_presentation: student.personal_presentation,
         observations: student.observations,
-        status: 'draft'
+        status: 'draft',
       }
 
       await upsertQualitativeReport(reportData)
-      toast.success(`Informe guardado para ${student.name} ${student.last_name}`)
+      toast.success(
+        `Informe guardado para ${student.name} ${student.last_name}`
+      )
     } catch (error) {
       console.error('Error saving report:', error)
       toast.error('Error al guardar el informe')
@@ -344,7 +384,7 @@ export function QualitativeReportPage() {
           attendance_issues: student.attendance_issues,
           personal_presentation: student.personal_presentation,
           observations: student.observations,
-          status: 'draft'
+          status: 'draft',
         }
         await upsertQualitativeReport(reportData)
       }
@@ -357,7 +397,7 @@ export function QualitativeReportPage() {
     }
   }
 
-  const currentSubject = subjects.find(s => s.subjectId === selectedSubject)
+  const currentSubject = subjects.find((s) => s.subjectId === selectedSubject)
 
   // Función para exportar a PDF
   const handleExportPDF = () => {
@@ -370,16 +410,16 @@ export function QualitativeReportPage() {
           const doc = new jsPDF({
             orientation: 'landscape',
             unit: 'mm',
-            format: 'a4'
+            format: 'a4',
           })
 
           // Configurar fuente
           doc.setFont('helvetica', 'normal')
-          
+
           // Título
           doc.setFontSize(16)
           doc.text('INFORME CUALITATIVO', 148, 15, { align: 'center' })
-          
+
           // Subtítulo
           doc.setFontSize(12)
           doc.text(`Asignatura: ${selectedGradebook.subjectName}`, 14, 25)
@@ -397,7 +437,7 @@ export function QualitativeReportPage() {
             student.behavioral_issues,
             student.attendance_issues,
             student.personal_presentation || '',
-            student.observations || ''
+            student.observations || '',
           ])
 
           // Crear tabla
@@ -410,7 +450,7 @@ export function QualitativeReportPage() {
             'Probl. Convivencia',
             'Faltas/Tarde',
             'Presentación',
-            'Observaciones'
+            'Observaciones',
           ]
 
           // @ts-ignore - autoTable es agregado por jspdf-autotable
@@ -423,13 +463,13 @@ export function QualitativeReportPage() {
               fontSize: 8,
               cellPadding: 2,
               overflow: 'linebreak',
-              minCellHeight: 10
+              minCellHeight: 10,
             },
             headStyles: {
               fillColor: [41, 128, 185],
               textColor: [255, 255, 255],
               fontSize: 8,
-              fontStyle: 'bold'
+              fontStyle: 'bold',
             },
             columnStyles: {
               0: { cellWidth: 10 },
@@ -440,8 +480,8 @@ export function QualitativeReportPage() {
               5: { cellWidth: 20 },
               6: { cellWidth: 20 },
               7: { cellWidth: 25 },
-              8: { cellWidth: 40 }
-            }
+              8: { cellWidth: 40 },
+            },
           })
 
           // Pie de página
@@ -449,12 +489,16 @@ export function QualitativeReportPage() {
           for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i)
             doc.setFontSize(8)
-            doc.text(`Página ${i} de ${pageCount}`, 280, 200, { align: 'right' })
+            doc.text(`Página ${i} de ${pageCount}`, 280, 200, {
+              align: 'right',
+            })
           }
 
           // Guardar PDF
-          doc.save(`informe_cualitativo_${selectedGradebook.gradeName}_${selectedGradebook.subjectName}_periodo${selectedPeriod}.pdf`)
-          
+          doc.save(
+            `informe_cualitativo_${selectedGradebook.gradeName}_${selectedGradebook.subjectName}_periodo${selectedPeriod}.pdf`
+          )
+
           toast.success('PDF exportado exitosamente')
         })
       })
@@ -467,14 +511,14 @@ export function QualitativeReportPage() {
   // Convertir a formato de apps para cada grado
   const gradesAsApps: GradeApp[] = []
   if (currentSubject) {
-    currentSubject.grades.forEach(grade => {
+    currentSubject.grades.forEach((grade) => {
       gradesAsApps.push({
         id: grade.id,
         name: grade.name,
         desc: 'Generar informe cualitativo para este grado',
         subjectId: currentSubject.subjectId,
         subjectName: currentSubject.subjectName,
-        collegeId: currentSubject.collegeId
+        collegeId: currentSubject.collegeId,
       })
     })
   }
@@ -482,12 +526,12 @@ export function QualitativeReportPage() {
   if (!isDocente) {
     return (
       <ProtectedRoute>
-        <div className='flex items-center justify-center min-h-screen'>
+        <div className='flex min-h-screen items-center justify-center'>
           <Card className='max-w-md'>
             <CardContent className='flex flex-col items-center justify-center py-12'>
-              <Users className='h-12 w-12 text-muted-foreground mb-4' />
-              <h3 className='text-lg font-semibold mb-2'>Acceso Restringido</h3>
-              <p className='text-muted-foreground text-center'>
+              <Users className='mb-4 h-12 w-12 text-muted-foreground' />
+              <h3 className='mb-2 text-lg font-semibold'>Acceso Restringido</h3>
+              <p className='text-center text-muted-foreground'>
                 Esta página está disponible únicamente para docentes.
               </p>
             </CardContent>
@@ -519,7 +563,7 @@ export function QualitativeReportPage() {
                   size='sm'
                   onClick={handleBackToSelection}
                 >
-                  <ChevronLeft className='h-4 w-4 mr-2' />
+                  <ChevronLeft className='mr-2 h-4 w-4' />
                   Volver
                 </Button>
                 <div>
@@ -527,7 +571,8 @@ export function QualitativeReportPage() {
                     Informe Cualitativo
                   </h1>
                   <p className='text-muted-foreground'>
-                    {selectedGradebook.subjectName} - {selectedGradebook.gradeName} - Período {selectedPeriod}
+                    {selectedGradebook.subjectName} -{' '}
+                    {selectedGradebook.gradeName} - Período {selectedPeriod}
                   </p>
                 </div>
               </div>
@@ -537,14 +582,14 @@ export function QualitativeReportPage() {
                   onClick={handleExportPDF}
                   disabled={students.length === 0}
                 >
-                  <Download className='h-4 w-4 mr-2' />
+                  <Download className='mr-2 h-4 w-4' />
                   Exportar PDF
                 </Button>
                 <Button
                   onClick={handleSaveAll}
                   disabled={isSaving || students.length === 0}
                 >
-                  <Save className='h-4 w-4 mr-2' />
+                  <Save className='mr-2 h-4 w-4' />
                   {isSaving ? 'Guardando...' : 'Guardar Todo'}
                 </Button>
               </div>
@@ -553,16 +598,18 @@ export function QualitativeReportPage() {
             {/* Tabla del informe */}
             <Card>
               <CardHeader>
-                <CardTitle className='text-lg'>Informe Cualitativo - Año Lectivo 2026</CardTitle>
+                <CardTitle className='text-lg'>
+                  Informe Cualitativo - Año Lectivo 2026
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
                   <div className='flex items-center justify-center py-12'>
-                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+                    <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary'></div>
                   </div>
                 ) : students.length === 0 ? (
                   <div className='flex flex-col items-center justify-center py-12 text-muted-foreground'>
-                    <Users className='h-12 w-12 mb-4' />
+                    <Users className='mb-4 h-12 w-12' />
                     <p>No hay estudiantes en este grado.</p>
                   </div>
                 ) : (
@@ -570,27 +617,45 @@ export function QualitativeReportPage() {
                     <Table>
                       <TableHeader>
                         <TableRow className='bg-muted/50'>
-                          <TableHead className='w-[60px] text-center'>N°</TableHead>
-                          <TableHead className='min-w-[200px]'>Nombre del Estudiante</TableHead>
+                          <TableHead className='w-[60px] text-center'>
+                            N°
+                          </TableHead>
+                          <TableHead className='min-w-[200px]'>
+                            Nombre del Estudiante
+                          </TableHead>
                           <TableHead className='min-w-[200px] text-xs'>
-                            Actividades que<br/>no ha entregado
+                            Actividades que
+                            <br />
+                            no ha entregado
                           </TableHead>
                           <TableHead className='min-w-[150px] text-xs'>
-                            Actividades<br/>Insuficientes
+                            Actividades
+                            <br />
+                            Insuficientes
                           </TableHead>
                           <TableHead className='min-w-[150px] text-xs'>
-                            Notas<br/>Positivas
+                            Notas
+                            <br />
+                            Positivas
                           </TableHead>
                           <TableHead className='w-[100px] text-center text-xs'>
-                            Problemas de<br/>Convivencia
+                            Problemas de
+                            <br />
+                            Convivencia
                           </TableHead>
                           <TableHead className='w-[100px] text-center text-xs'>
-                            Faltas/Llegadas<br/>Tarde
+                            Faltas/Llegadas
+                            <br />
+                            Tarde
                           </TableHead>
                           <TableHead className='min-w-[150px] text-xs'>
-                            Presentación<br/>Personal
+                            Presentación
+                            <br />
+                            Personal
                           </TableHead>
-                          <TableHead className='min-w-[200px]'>Observaciones</TableHead>
+                          <TableHead className='min-w-[200px]'>
+                            Observaciones
+                          </TableHead>
                           <TableHead className='w-[100px]'>Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -603,84 +668,140 @@ export function QualitativeReportPage() {
                             <TableCell className='font-medium'>
                               {student.name} {student.last_name}
                             </TableCell>
-                        <TableCell className='align-top'>
-                          <div className='max-h-[200px] overflow-y-auto'>
-                            {(student.activities_not_delivered as ActivityNotDelivered[]).length > 0 ? (
-                              <ul className='list-disc pl-4 space-y-1 text-xs'>
-                                {(student.activities_not_delivered as ActivityNotDelivered[]).map((activity, idx) => (
-                                  <li key={idx} className='text-xs'>
-                                    <span className='inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800 mr-1'>
-                                      {activity.category}
-                                    </span>
-                                    <span className='font-medium'>{activity.name}</span>
-                                    <span className='text-muted-foreground ml-1 text-[10px]'>
-                                      ({activity.created_at})
-                                    </span>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <span className='text-muted-foreground text-xs italic'>
-                                Sin actividades pendientes
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
+                            <TableCell className='align-top'>
+                              <div className='max-h-[200px] overflow-y-auto'>
+                                {(
+                                  student.activities_not_delivered as ActivityNotDelivered[]
+                                ).length > 0 ? (
+                                  <ul className='list-disc space-y-1 pl-4 text-xs'>
+                                    {(
+                                      student.activities_not_delivered as ActivityNotDelivered[]
+                                    ).map((activity, idx) => (
+                                      <li key={idx} className='text-xs'>
+                                        <span className='mr-1 inline-flex items-center rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800'>
+                                          {activity.category}
+                                        </span>
+                                        <span className='font-medium'>
+                                          {activity.name}
+                                        </span>
+                                        <span className='ml-1 text-[10px] text-muted-foreground'>
+                                          ({activity.created_at})
+                                        </span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <span className='text-xs text-muted-foreground italic'>
+                                    Sin actividades pendientes
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell>
                               <Textarea
                                 value={student.insufficient_activities}
-                                onChange={(e) => handleInputChange(student.id, 'insufficient_activities', e.target.value)}
-                                className='min-h-[60px] text-xs resize-none'
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    student.id,
+                                    'insufficient_activities',
+                                    e.target.value
+                                  )
+                                }
+                                className='min-h-[60px] resize-none text-xs'
                                 placeholder='Actividades con nota baja...'
                               />
                             </TableCell>
                             <TableCell>
                               <Textarea
                                 value={student.positive_notes}
-                                onChange={(e) => handleInputChange(student.id, 'positive_notes', e.target.value)}
-                                className='min-h-[60px] text-xs resize-none'
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    student.id,
+                                    'positive_notes',
+                                    e.target.value
+                                  )
+                                }
+                                className='min-h-[60px] resize-none text-xs'
                                 placeholder='Aspectos positivos...'
                               />
                             </TableCell>
-                        <TableCell className='text-center'>
-                          <Button
-                            variant={student.behavioral_issues === 'Sí' ? 'default' : 'outline'}
-                            size='sm'
-                            className='w-16'
-                            onClick={() => {
-                              const newValue = student.behavioral_issues === 'Sí' ? 'No' : 'Sí'
-                              handleInputChange(student.id, 'behavioral_issues', newValue)
-                            }}
-                          >
-                            {student.behavioral_issues === 'Sí' ? 'Sí' : 'No'}
-                          </Button>
-                        </TableCell>
-                        <TableCell className='text-center'>
-                          <Button
-                            variant={student.attendance_issues === 'Sí' ? 'default' : 'outline'}
-                            size='sm'
-                            className='w-16'
-                            onClick={() => {
-                              const newValue = student.attendance_issues === 'Sí' ? 'No' : 'Sí'
-                              handleInputChange(student.id, 'attendance_issues', newValue)
-                            }}
-                          >
-                            {student.attendance_issues === 'Sí' ? 'Sí' : 'No'}
-                          </Button>
-                        </TableCell>
+                            <TableCell className='text-center'>
+                              <Button
+                                variant={
+                                  student.behavioral_issues === 'Sí'
+                                    ? 'default'
+                                    : 'outline'
+                                }
+                                size='sm'
+                                className='w-16'
+                                onClick={() => {
+                                  const newValue =
+                                    student.behavioral_issues === 'Sí'
+                                      ? 'No'
+                                      : 'Sí'
+                                  handleInputChange(
+                                    student.id,
+                                    'behavioral_issues',
+                                    newValue
+                                  )
+                                }}
+                              >
+                                {student.behavioral_issues === 'Sí'
+                                  ? 'Sí'
+                                  : 'No'}
+                              </Button>
+                            </TableCell>
+                            <TableCell className='text-center'>
+                              <Button
+                                variant={
+                                  student.attendance_issues === 'Sí'
+                                    ? 'default'
+                                    : 'outline'
+                                }
+                                size='sm'
+                                className='w-16'
+                                onClick={() => {
+                                  const newValue =
+                                    student.attendance_issues === 'Sí'
+                                      ? 'No'
+                                      : 'Sí'
+                                  handleInputChange(
+                                    student.id,
+                                    'attendance_issues',
+                                    newValue
+                                  )
+                                }}
+                              >
+                                {student.attendance_issues === 'Sí'
+                                  ? 'Sí'
+                                  : 'No'}
+                              </Button>
+                            </TableCell>
                             <TableCell>
                               <Textarea
                                 value={student.personal_presentation}
-                                onChange={(e) => handleInputChange(student.id, 'personal_presentation', e.target.value)}
-                                className='min-h-[60px] text-xs resize-none'
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    student.id,
+                                    'personal_presentation',
+                                    e.target.value
+                                  )
+                                }
+                                className='min-h-[60px] resize-none text-xs'
                                 placeholder='Presentación personal...'
                               />
                             </TableCell>
                             <TableCell>
                               <Textarea
                                 value={student.observations}
-                                onChange={(e) => handleInputChange(student.id, 'observations', e.target.value)}
-                                className='min-h-[60px] text-xs resize-none'
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    student.id,
+                                    'observations',
+                                    e.target.value
+                                  )
+                                }
+                                className='min-h-[60px] resize-none text-xs'
                                 placeholder='Observaciones generales...'
                               />
                             </TableCell>
@@ -722,9 +843,11 @@ export function QualitativeReportPage() {
             {subjects.length === 0 ? (
               <Card>
                 <CardContent className='flex flex-col items-center justify-center py-12'>
-                  <BookOpen className='h-12 w-12 text-muted-foreground mb-4' />
-                  <h3 className='text-lg font-semibold mb-2'>No tienes asignaciones</h3>
-                  <p className='text-muted-foreground text-center mb-4'>
+                  <BookOpen className='mb-4 h-12 w-12 text-muted-foreground' />
+                  <h3 className='mb-2 text-lg font-semibold'>
+                    No tienes asignaciones
+                  </h3>
+                  <p className='mb-4 text-center text-muted-foreground'>
                     {selectedColegio || selectedColegio !== null
                       ? 'No se encontraron materias asignadas en este colegio.'
                       : 'Selecciona un colegio para ver tus asignaciones.'}
@@ -739,19 +862,28 @@ export function QualitativeReportPage() {
                       placeholder='Filtrar grados...'
                       className='h-9 w-40 lg:w-[250px]'
                     />
-                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                    <Select
+                      value={selectedSubject}
+                      onValueChange={setSelectedSubject}
+                    >
                       <SelectTrigger className='w-36'>
                         <SelectValue placeholder='Materia' />
                       </SelectTrigger>
                       <SelectContent>
                         {subjects.map((subject) => (
-                          <SelectItem key={subject.subjectId} value={subject.subjectId}>
+                          <SelectItem
+                            key={subject.subjectId}
+                            value={subject.subjectId}
+                          >
                             {subject.subjectName}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                    <Select
+                      value={selectedPeriod}
+                      onValueChange={setSelectedPeriod}
+                    >
                       <SelectTrigger className='w-32'>
                         <SelectValue placeholder='Período' />
                       </SelectTrigger>
@@ -773,7 +905,7 @@ export function QualitativeReportPage() {
                   {gradesAsApps.map((gradeApp) => (
                     <li
                       key={gradeApp.id}
-                      className='rounded-lg border p-4 hover:shadow-md cursor-pointer transition-shadow'
+                      className='cursor-pointer rounded-lg border p-4 transition-shadow hover:shadow-md'
                       onClick={() => handleOpenReport(gradeApp)}
                     >
                       <div className='mb-8 flex items-center justify-between'>
@@ -790,13 +922,15 @@ export function QualitativeReportPage() {
                             handleOpenReport(gradeApp)
                           }}
                         >
-                          <FileText className='h-4 w-4 mr-2' />
+                          <FileText className='mr-2 h-4 w-4' />
                           Informe
                         </Button>
                       </div>
                       <div>
                         <h2 className='mb-1 font-semibold'>{gradeApp.name}</h2>
-                        <p className='line-clamp-2 text-gray-500'>{gradeApp.desc}</p>
+                        <p className='line-clamp-2 text-gray-500'>
+                          {gradeApp.desc}
+                        </p>
                       </div>
                     </li>
                   ))}
