@@ -1,23 +1,64 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import {
+  getGradebookData,
+  createActivity,
+  upsertGradebookEntry,
+  deleteActivity,
+  Activity,
+  Student,
+} from '@/services/gradebook'
+import {
+  ArrowLeft,
+  Plus,
+  Save,
+  Trash2,
+  Users,
+  BookOpen,
+  Calculator,
+} from 'lucide-react'
+import { toast } from 'sonner'
+import { useAuth } from '@/hooks/use-auth'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ConfigDrawer } from '@/components/config-drawer'
-import { ProtectedRoute } from '@/components/ProtectedRoute'
-import { useAuth } from '@/hooks/use-auth'
-import { getGradebookData, createActivity, upsertGradebookEntry, deleteActivity, Activity, Student } from '@/services/gradebook'
-import { ArrowLeft, Plus, Save, Trash2, Users, BookOpen, Calculator } from 'lucide-react'
-import { toast } from 'sonner'
-import { useNavigate } from '@tanstack/react-router'
 
 interface GradebookProps {
   subjectId: string
@@ -30,12 +71,143 @@ const categoryLabels = {
   apuntes_tareas: 'Apuntes y Tareas',
   talleres_exposiciones: 'Talleres y Exposiciones',
   actitudinal: 'Actitudinal',
-  evaluacion: 'Evaluación'
+  evaluacion: 'Evaluación',
 }
 
-export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: GradebookProps) {
-  console.log('Gradebook props:', { subjectId, gradeId, subjectName, gradeName })
-  
+// Componente separado para el input de calificación
+interface GradeInputProps {
+  studentId: string
+  activityId: string
+  activityMaxScore: number
+  grade: number | undefined
+  onGradeChange: (studentId: string, activityId: string, score: number) => void
+  inputRefs: React.MutableRefObject<Map<string, HTMLInputElement>>
+  students: Student[]
+}
+
+function GradeInput({
+  studentId,
+  activityId,
+  activityMaxScore,
+  grade,
+  onGradeChange,
+  inputRefs,
+  students,
+}: GradeInputProps) {
+  const inputKey = `${studentId}-${activityId}`
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [inputValue, setInputValue] = useState<string>(
+    grade !== undefined && grade !== null ? grade.toString() : ''
+  )
+
+  // Sync local state when external grade changes (only if different)
+  useEffect(() => {
+    const newValue =
+      grade !== undefined && grade !== null ? grade.toString() : ''
+    setInputValue((prev) => {
+      // Only update if the input is not focused (user is not typing)
+      if (inputRef.current !== document.activeElement && newValue !== prev) {
+        return newValue
+      }
+      return prev
+    })
+  }, [grade])
+
+  // Register this input in the parent refs map
+  useEffect(() => {
+    const el = inputRef.current
+    if (el) {
+      inputRefs.current.set(inputKey, el)
+    }
+    return () => {
+      inputRefs.current.delete(inputKey)
+    }
+  }, [inputKey, inputRefs])
+
+  const commitValue = (value: string) => {
+    const trimmed = value.trim()
+    if (trimmed === '') {
+      onGradeChange(studentId, activityId, 0)
+      setInputValue('')
+      return
+    }
+    const numericValue = parseFloat(trimmed)
+    if (
+      !isNaN(numericValue) &&
+      numericValue >= 0 &&
+      numericValue <= activityMaxScore
+    ) {
+      onGradeChange(studentId, activityId, numericValue)
+      setInputValue(numericValue.toString())
+    } else {
+      // Revert to saved value or empty
+      const savedValue =
+        grade !== undefined && grade !== null ? grade.toString() : ''
+      setInputValue(savedValue)
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+
+    // Allow empty string, numbers, and decimal points during typing
+    if (newValue === '' || /^\d*\.?\d*$/.test(newValue)) {
+      setInputValue(newValue)
+    }
+  }
+
+  const handleBlur = () => {
+    commitValue(inputValue)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+
+      // Commit current value
+      commitValue(inputValue)
+
+      // Find current student index
+      const currentStudentIndex = students.findIndex((s) => s.id === studentId)
+      if (currentStudentIndex === -1) return
+
+      // Find next student (same column, next row)
+      const nextStudentIndex =
+        currentStudentIndex + 1 < students.length ? currentStudentIndex + 1 : 0
+      const nextStudent = students[nextStudentIndex]
+
+      if (nextStudent) {
+        const nextKey = `${nextStudent.id}-${activityId}`
+        const nextInput = inputRefs.current.get(nextKey)
+        if (nextInput) {
+          nextInput.focus()
+          nextInput.select()
+        }
+      }
+    }
+  }
+
+  return (
+    <Input
+      ref={inputRef}
+      type='text'
+      inputMode='decimal'
+      value={inputValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      placeholder='0'
+      className='w-20 text-center'
+    />
+  )
+}
+
+export function Gradebook({
+  subjectId,
+  gradeId,
+  subjectName,
+  gradeName,
+}: GradebookProps) {
   const [students, setStudents] = useState<Student[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,10 +217,15 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
     name: '',
     category: 'apuntes_tareas' as Activity['category'],
     max_score: 100,
-    description: ''
+    description: '',
   })
-  const [grades, setGrades] = useState<Record<string, Record<string, number>>>({})
-  
+  const [grades, setGrades] = useState<Record<string, Record<string, number>>>(
+    {}
+  )
+
+  // Refs for grade inputs to handle keyboard navigation
+  const gradeInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -62,8 +239,6 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
       const data = await getGradebookData(subjectId, gradeId)
       setStudents(data.students)
       setActivities(data.activities)
-
-      // Set grades directly from gradebook data
       setGrades(data.grades || {})
     } catch (error) {
       console.error('Error loading gradebook data:', error)
@@ -87,7 +262,7 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
         description: newActivity.description,
         subject_id: subjectId,
         grade_id: gradeId,
-        teacher_id: user!.id
+        teacher_id: user!.id,
       })
 
       setActivities([...activities, activity])
@@ -95,7 +270,7 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
         name: '',
         category: 'apuntes_tareas',
         max_score: 100,
-        description: ''
+        description: '',
       })
       setShowAddActivity(false)
       toast.success('Actividad agregada exitosamente')
@@ -108,15 +283,14 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
   const handleDeleteActivity = async (activityId: string) => {
     try {
       await deleteActivity(activityId)
-      setActivities(activities.filter(a => a.id !== activityId))
-      
-      // Remove grades for this activity
+      setActivities(activities.filter((a) => a.id !== activityId))
+
       const updatedGrades = { ...grades }
-      Object.keys(updatedGrades).forEach(studentId => {
+      Object.keys(updatedGrades).forEach((studentId) => {
         delete updatedGrades[studentId][activityId]
       })
       setGrades(updatedGrades)
-      
+
       toast.success('Actividad eliminada exitosamente')
     } catch (error) {
       console.error('Error deleting activity:', error)
@@ -124,13 +298,17 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
     }
   }
 
-  const handleGradeChange = (studentId: string, activityId: string, score: number) => {
-    setGrades(prev => ({
+  const handleGradeChange = (
+    studentId: string,
+    activityId: string,
+    score: number
+  ) => {
+    setGrades((prev) => ({
       ...prev,
       [studentId]: {
         ...prev[studentId],
-        [activityId]: score
-      }
+        [activityId]: score,
+      },
     }))
   }
 
@@ -146,7 +324,7 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
               student_id: studentId,
               activity_id: activityId,
               score,
-              graded_by: user!.id
+              graded_by: user!.id,
             })
           )
         })
@@ -154,7 +332,7 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
 
       await Promise.all(savePromises)
       toast.success('Calificaciones guardadas exitosamente')
-      await loadGradebookData() // Reload to get updated entries
+      await loadGradebookData()
     } catch (error) {
       console.error('Error saving grades:', error)
       toast.error('Error al guardar las calificaciones')
@@ -165,20 +343,28 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
 
   const calculateStudentAverage = (studentId: string): number => {
     const studentGrades = grades[studentId] || {}
-    const activityScores = Object.entries(studentGrades).map(([activityId, score]) => {
-      const activity = activities.find(a => a.id === activityId)
-      return activity ? (score / activity.max_score) * 100 : 0
-    })
-    
+    const activityScores = Object.entries(studentGrades).map(
+      ([activityId, score]) => {
+        const activity = activities.find((a) => a.id === activityId)
+        return activity ? (score / activity.max_score) * 100 : 0
+      }
+    )
+
     if (activityScores.length === 0) return 0
-    return activityScores.reduce((sum, score) => sum + score, 0) / activityScores.length
+    return (
+      activityScores.reduce((sum, score) => sum + score, 0) /
+      activityScores.length
+    )
   }
 
   const getActivitiesByCategory = (category: Activity['category']) => {
-    return activities.filter(activity => activity.category === category)
+    return activities.filter((activity) => activity.category === category)
   }
 
-  const getGradeForEntry = (studentId: string, activityId: string): number | undefined => {
+  const getGradeForEntry = (
+    studentId: string,
+    activityId: string
+  ): number | undefined => {
     return grades[studentId]?.[activityId]
   }
 
@@ -193,10 +379,12 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
           </div>
         </Header>
         <Main fixed>
-          <div className='flex items-center justify-center min-h-96'>
+          <div className='flex min-h-96 items-center justify-center'>
             <div className='text-center'>
-              <BookOpen className='h-12 w-12 text-muted-foreground mx-auto mb-4' />
-              <p className='text-muted-foreground'>Cargando planilla de calificaciones...</p>
+              <BookOpen className='mx-auto mb-4 h-12 w-12 text-muted-foreground' />
+              <p className='text-muted-foreground'>
+                Cargando planilla de calificaciones...
+              </p>
             </div>
           </div>
         </Main>
@@ -215,14 +403,14 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
       </Header>
 
       <Main fixed>
-        <div className='flex items-center justify-between mb-6'>
+        <div className='mb-6 flex items-center justify-between'>
           <div className='flex items-center gap-4'>
             <Button
               variant='outline'
               size='sm'
               onClick={() => navigate({ to: '/planillas' })}
             >
-              <ArrowLeft className='h-4 w-4 mr-2' />
+              <ArrowLeft className='mr-2 h-4 w-4' />
               Volver a Planillas
             </Button>
             <div>
@@ -234,12 +422,12 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
               </p>
             </div>
           </div>
-          
+
           <div className='flex items-center gap-2'>
             <Dialog open={showAddActivity} onOpenChange={setShowAddActivity}>
               <DialogTrigger asChild>
                 <Button variant='outline'>
-                  <Plus className='h-4 w-4 mr-2' />
+                  <Plus className='mr-2 h-4 w-4' />
                   Agregar Actividad
                 </Button>
               </DialogTrigger>
@@ -256,7 +444,12 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                     <Input
                       id='name'
                       value={newActivity.name}
-                      onChange={(e) => setNewActivity(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) =>
+                        setNewActivity((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
                       placeholder='Ej: Tarea 1'
                     />
                   </div>
@@ -264,19 +457,21 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                     <Label htmlFor='category'>Categoría</Label>
                     <Select
                       value={newActivity.category}
-                      onValueChange={(value: Activity['category']) => 
-                        setNewActivity(prev => ({ ...prev, category: value }))
+                      onValueChange={(value: Activity['category']) =>
+                        setNewActivity((prev) => ({ ...prev, category: value }))
                       }
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(categoryLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
+                        {Object.entries(categoryLabels).map(
+                          ([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          )
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -286,10 +481,12 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                       id='max_score'
                       type='number'
                       value={newActivity.max_score}
-                      onChange={(e) => setNewActivity(prev => ({ 
-                        ...prev, 
-                        max_score: parseFloat(e.target.value) || 0 
-                      }))}
+                      onChange={(e) =>
+                        setNewActivity((prev) => ({
+                          ...prev,
+                          max_score: parseFloat(e.target.value) || 0,
+                        }))
+                      }
                       min='0'
                       step='0.01'
                     />
@@ -299,24 +496,30 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                     <Textarea
                       id='description'
                       value={newActivity.description}
-                      onChange={(e) => setNewActivity(prev => ({ ...prev, description: e.target.value }))}
+                      onChange={(e) =>
+                        setNewActivity((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
                       placeholder='Descripción de la actividad...'
                     />
                   </div>
                 </div>
                 <div className='flex justify-end gap-2'>
-                  <Button variant='outline' onClick={() => setShowAddActivity(false)}>
+                  <Button
+                    variant='outline'
+                    onClick={() => setShowAddActivity(false)}
+                  >
                     Cancelar
                   </Button>
-                  <Button onClick={handleAddActivity}>
-                    Agregar Actividad
-                  </Button>
+                  <Button onClick={handleAddActivity}>Agregar Actividad</Button>
                 </div>
               </DialogContent>
             </Dialog>
-            
+
             <Button onClick={handleSaveGrades} disabled={saving}>
-              <Save className='h-4 w-4 mr-2' />
+              <Save className='mr-2 h-4 w-4' />
               {saving ? 'Guardando...' : 'Guardar Calificaciones'}
             </Button>
           </div>
@@ -331,7 +534,9 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                   <Users className='h-5 w-5 text-blue-600' />
                   <div>
                     <div className='text-2xl font-bold'>{students.length}</div>
-                    <div className='text-sm text-muted-foreground'>Estudiantes</div>
+                    <div className='text-sm text-muted-foreground'>
+                      Estudiantes
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -341,8 +546,12 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                 <div className='flex items-center gap-2'>
                   <BookOpen className='h-5 w-5 text-green-600' />
                   <div>
-                    <div className='text-2xl font-bold'>{activities.length}</div>
-                    <div className='text-sm text-muted-foreground'>Actividades</div>
+                    <div className='text-2xl font-bold'>
+                      {activities.length}
+                    </div>
+                    <div className='text-sm text-muted-foreground'>
+                      Actividades
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -353,11 +562,20 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                   <Calculator className='h-5 w-5 text-purple-600' />
                   <div>
                     <div className='text-2xl font-bold'>
-                      {students.length > 0 && activities.length > 0 
-                        ? (students.reduce((sum, student) => sum + calculateStudentAverage(student.id), 0) / students.length).toFixed(1)
-                        : '0.0'}%
+                      {students.length > 0 && activities.length > 0
+                        ? (
+                            students.reduce(
+                              (sum, student) =>
+                                sum + calculateStudentAverage(student.id),
+                              0
+                            ) / students.length
+                          ).toFixed(1)
+                        : '0.0'}
+                      %
                     </div>
-                    <div className='text-sm text-muted-foreground'>Promedio General</div>
+                    <div className='text-sm text-muted-foreground'>
+                      Promedio General
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -368,11 +586,18 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                   <Save className='h-5 w-5 text-orange-600' />
                   <div>
                     <div className='text-2xl font-bold'>
-                      {Object.values(grades).reduce((sum, studentGrades) => 
-                        sum + Object.values(studentGrades).filter(grade => grade > 0).length, 0
+                      {Object.values(grades).reduce(
+                        (sum, studentGrades) =>
+                          sum +
+                          Object.values(studentGrades).filter(
+                            (grade) => grade > 0
+                          ).length,
+                        0
                       )}
                     </div>
-                    <div className='text-sm text-muted-foreground'>Calificaciones Guardadas</div>
+                    <div className='text-sm text-muted-foreground'>
+                      Calificaciones Guardadas
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -380,7 +605,9 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
           </div>
 
           {Object.entries(categoryLabels).map(([category, label]) => {
-            const categoryActivities = getActivitiesByCategory(category as Activity['category'])
+            const categoryActivities = getActivitiesByCategory(
+              category as Activity['category']
+            )
             if (categoryActivities.length === 0) return null
 
             return (
@@ -401,12 +628,17 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                         <TableRow>
                           <TableHead className='w-16'>#</TableHead>
                           <TableHead className='min-w-48'>Estudiante</TableHead>
-                          {categoryActivities.map(activity => (
-                            <TableHead key={activity.id} className='min-w-32 text-center'>
+                          {categoryActivities.map((activity) => (
+                            <TableHead
+                              key={activity.id}
+                              className='min-w-32 text-center'
+                            >
                               <div className='flex flex-col items-center gap-1'>
                                 <div className='flex items-center gap-2'>
                                   <div className='text-center'>
-                                    <div className='font-medium'>{activity.name}</div>
+                                    <div className='font-medium'>
+                                      {activity.name}
+                                    </div>
                                     <div className='text-xs text-muted-foreground'>
                                       Max: {activity.max_score}
                                     </div>
@@ -414,7 +646,9 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                                   <Button
                                     variant='ghost'
                                     size='sm'
-                                    onClick={() => handleDeleteActivity(activity.id)}
+                                    onClick={() =>
+                                      handleDeleteActivity(activity.id)
+                                    }
                                     className='h-6 w-6 p-0 text-destructive hover:text-destructive'
                                   >
                                     <Trash2 className='h-3 w-3' />
@@ -424,7 +658,7 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                             </TableHead>
                           ))}
                           <TableHead className='text-center'>
-                            <Calculator className='h-4 w-4 mx-auto' />
+                            <Calculator className='mx-auto h-4 w-4' />
                             <div className='text-xs'>Promedio</div>
                           </TableHead>
                         </TableRow>
@@ -439,7 +673,9 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                               </TableCell>
                               <TableCell>
                                 <div>
-                                  <div className='font-medium'>{student.name}</div>
+                                  <div className='font-medium'>
+                                    {student.name}
+                                  </div>
                                   {student.last_name && (
                                     <div className='text-sm text-muted-foreground'>
                                       {student.last_name}
@@ -447,26 +683,24 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
                                   )}
                                 </div>
                               </TableCell>
-                              {categoryActivities.map(activity => {
-                                const grade = getGradeForEntry(student.id, activity.id)
+                              {categoryActivities.map((activity) => {
+                                const grade = getGradeForEntry(
+                                  student.id,
+                                  activity.id
+                                )
                                 return (
-                                  <TableCell key={activity.id} className='text-center'>
-                                    <Input
-                                      type='number'
-                                      value={grade || ''}
-                                      onChange={(e) => {
-                                        const value = parseFloat(e.target.value)
-                                        if (!isNaN(value) && value >= 0 && value <= activity.max_score) {
-                                          handleGradeChange(student.id, activity.id, value)
-                                        } else if (e.target.value === '') {
-                                          handleGradeChange(student.id, activity.id, 0)
-                                        }
-                                      }}
-                                      placeholder='0'
-                                      min='0'
-                                      max={activity.max_score}
-                                      step='0.01'
-                                      className='w-20 text-center'
+                                  <TableCell
+                                    key={activity.id}
+                                    className='text-center'
+                                  >
+                                    <GradeInput
+                                      studentId={student.id}
+                                      activityId={activity.id}
+                                      activityMaxScore={activity.max_score}
+                                      grade={grade}
+                                      onGradeChange={handleGradeChange}
+                                      inputRefs={gradeInputRefs}
+                                      students={students}
                                     />
                                   </TableCell>
                                 )
@@ -488,13 +722,13 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
           {activities.length === 0 && (
             <Card>
               <CardContent className='flex flex-col items-center justify-center py-12'>
-                <BookOpen className='h-12 w-12 text-muted-foreground mb-4' />
-                <h3 className='text-lg font-semibold mb-2'>Sin Actividades</h3>
-                <p className='text-muted-foreground text-center mb-4'>
+                <BookOpen className='mb-4 h-12 w-12 text-muted-foreground' />
+                <h3 className='mb-2 text-lg font-semibold'>Sin Actividades</h3>
+                <p className='mb-4 text-center text-muted-foreground'>
                   No hay actividades configuradas para esta materia y grado.
                 </p>
                 <Button onClick={() => setShowAddActivity(true)}>
-                  <Plus className='h-4 w-4 mr-2' />
+                  <Plus className='mr-2 h-4 w-4' />
                   Agregar Primera Actividad
                 </Button>
               </CardContent>
@@ -504,9 +738,9 @@ export function Gradebook({ subjectId, gradeId, subjectName, gradeName }: Gradeb
           {students.length === 0 && activities.length > 0 && (
             <Card>
               <CardContent className='flex flex-col items-center justify-center py-12'>
-                <Users className='h-12 w-12 text-muted-foreground mb-4' />
-                <h3 className='text-lg font-semibold mb-2'>Sin Estudiantes</h3>
-                <p className='text-muted-foreground text-center'>
+                <Users className='mb-4 h-12 w-12 text-muted-foreground' />
+                <h3 className='mb-2 text-lg font-semibold'>Sin Estudiantes</h3>
+                <p className='text-center text-muted-foreground'>
                   No hay estudiantes inscritos en este grado.
                 </p>
               </CardContent>
