@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { getAlumnosByGrade } from '@/services/alumnos'
 import { getAssignmentsByTeacher, getGrades } from '@/services/assignments'
-import { getGradebookData, getActivities } from '@/services/gradebook'
+import {
+  getColegioSettings,
+  ColegioSettings,
+} from '@/services/colegio-settings'
+import { getGradebookData, getActivities, Activity } from '@/services/gradebook'
 import {
   getQualitativeReports,
   upsertQualitativeReport,
@@ -64,9 +68,16 @@ interface ActivityNotDelivered {
 
 interface ActivityWithPositivePerformance {
   name: string
-  category: string
+  activity_type: string
   grade: number
   performance: 'basico' | 'alto' | 'superior'
+  created_at: string
+}
+
+interface ActivityWithLowPerformance {
+  name: string
+  activity_type: string
+  grade: number
   created_at: string
 }
 
@@ -84,8 +95,10 @@ interface StudentReport {
   report?: QualitativeReport
   activities_not_delivered: ActivityNotDelivered[]
   activities_json: string // Para guardar en BD
-  insufficient_activities: string
-  positive_notes: string
+  insufficient_activities: ActivityWithLowPerformance[]
+  insufficient_activities_json: string
+  positive_activities: ActivityWithPositivePerformance[]
+  positive_activities_json: string
   behavioral_issues: 'Sí' | 'No'
   attendance_issues: 'Sí' | 'No'
   personal_presentation: string
@@ -116,6 +129,8 @@ export function QualitativeReportPage() {
     gradeName: string
     collegeId: string
   } | null>(null)
+  const [colegioSettings, setColegioSettings] =
+    useState<ColegioSettings | null>(null)
   const { user, isDocente } = useAuth()
   const { selectedColegio } = useColegio()
 
@@ -196,11 +211,53 @@ export function QualitativeReportPage() {
     }
   }
 
+  // Función para determinar el nivel de desempeño basado en la nota y la configuración del colegio
+  const getPerformanceLevel = (
+    score: number,
+    settings: ColegioSettings
+  ): 'bajo' | 'basico' | 'alto' | 'superior' | null => {
+    if (!settings.performance_scale) return null
+
+    const scale = settings.performance_scale
+
+    // Verificar que cada rango exista y tenga las propiedades min/max
+    if (scale.bajo?.min !== undefined && scale.bajo?.max !== undefined) {
+      if (score >= scale.bajo.min && score <= scale.bajo.max) return 'bajo'
+    }
+    if (scale.basico?.min !== undefined && scale.basico?.max !== undefined) {
+      if (score >= scale.basico.min && score <= scale.basico.max)
+        return 'basico'
+    }
+    if (scale.alto?.min !== undefined && scale.alto?.max !== undefined) {
+      if (score >= scale.alto.min && score <= scale.alto.max) return 'alto'
+    }
+    if (
+      scale.superior?.min !== undefined &&
+      scale.superior?.max !== undefined
+    ) {
+      if (score >= scale.superior.min && score <= scale.superior.max)
+        return 'superior'
+    }
+
+    // Si no hay performance_scale configurado, usar valores por defecto basados en escala_calificacion
+    const maxScore = settings.escala_calificacion === '1-5' ? 5 : 10
+    const percentage = (score / maxScore) * 100
+
+    if (percentage < 60) return 'bajo'
+    if (percentage < 80) return 'basico'
+    if (percentage < 95) return 'alto'
+    return 'superior'
+  }
+
   const loadStudentsAndReports = async () => {
     if (!selectedGradebook || !selectedColegio) return
 
     setIsLoading(true)
     try {
+      // Cargar configuración del colegio
+      const settings = await getColegioSettings(selectedColegio)
+      setColegioSettings(settings)
+
       // Cargar estudiantes del grado
       const alumnosData = await getAlumnosByGrade(
         selectedGradebook.gradeId,
@@ -235,6 +292,11 @@ export function QualitativeReportPage() {
 
         // Calcular automáticamente las actividades sin nota
         const activitiesNotDelivered: ActivityNotDelivered[] = []
+        // Calcular actividades con desempeño bajo
+        const activitiesWithLowPerformance: ActivityWithLowPerformance[] = []
+        // Calcular actividades con desempeño alto/superior
+        const activitiesWithPositivePerformance: ActivityWithPositivePerformance[] =
+          []
 
         if (gradebookData.grades[alumno.id]) {
           activities.forEach((activity) => {
@@ -248,36 +310,67 @@ export function QualitativeReportPage() {
             }
 
             const studentGrades = gradebookData.grades[alumno.id]
-            const hasGrade =
-              studentGrades &&
-              studentGrades[activity.id] !== undefined &&
-              studentGrades[activity.id] > 0
+            const grade = studentGrades?.[activity.id]
+            const hasGrade = grade !== undefined && grade > 0
+
+            // El tipo específico de actividad se guarda en description
+            const activityType = activity.description || activity.category
+
+            // Formatear la fecha (solo mes y día)
+            const activityDate = new Date(activity.created_at)
+            const formattedDate = activityDate.toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: 'short',
+            })
 
             if (!hasGrade) {
-              // El tipo específico de actividad se guarda en description
-              const activityType = activity.description || activity.category
-
-              // Formatear la fecha (solo mes y día)
-              const activityDate = new Date(activity.created_at)
-              const formattedDate = activityDate.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: 'short',
-              })
-
               activitiesNotDelivered.push({
                 name: activity.name,
                 category: activity.category,
                 activity_type: activityType,
                 created_at: formattedDate,
               })
+            } else {
+              // Tiene nota, verificar el nivel de desempeño
+              const performanceLevel = getPerformanceLevel(grade, settings)
+
+              if (performanceLevel === 'bajo') {
+                activitiesWithLowPerformance.push({
+                  name: activity.name,
+                  activity_type: activityType,
+                  grade: grade,
+                  created_at: formattedDate,
+                })
+              } else if (
+                performanceLevel === 'alto' ||
+                performanceLevel === 'superior'
+              ) {
+                activitiesWithPositivePerformance.push({
+                  name: activity.name,
+                  activity_type: activityType,
+                  grade: grade,
+                  performance: performanceLevel,
+                  created_at: formattedDate,
+                })
+              }
             }
           })
         }
 
-        // Convertir el array a JSON string para guardar en la BD
+        // Convertir los arrays a JSON string para guardar en la BD
         const activitiesJson =
           activitiesNotDelivered.length > 0
             ? JSON.stringify(activitiesNotDelivered)
+            : ''
+
+        const insufficientActivitiesJson =
+          activitiesWithLowPerformance.length > 0
+            ? JSON.stringify(activitiesWithLowPerformance)
+            : ''
+
+        const positiveActivitiesJson =
+          activitiesWithPositivePerformance.length > 0
+            ? JSON.stringify(activitiesWithPositivePerformance)
             : ''
 
         return {
@@ -285,9 +378,10 @@ export function QualitativeReportPage() {
           report: existingReport,
           activities_not_delivered: activitiesNotDelivered,
           activities_json: activitiesJson, // Para guardar en BD
-          insufficient_activities:
-            existingReport?.insufficient_activities || '',
-          positive_notes: existingReport?.positive_notes || '',
+          insufficient_activities: activitiesWithLowPerformance,
+          insufficient_activities_json: insufficientActivitiesJson,
+          positive_activities: activitiesWithPositivePerformance,
+          positive_activities_json: positiveActivitiesJson,
           behavioral_issues: behavioralValue === 'Sí' ? 'Sí' : 'No',
           attendance_issues: attendanceValue === 'Sí' ? 'Sí' : 'No',
           personal_presentation: existingReport?.personal_presentation || '',
@@ -347,8 +441,8 @@ export function QualitativeReportPage() {
         colegio_id: selectedColegio,
         academic_year: 2026,
         activities_not_delivered: student.activities_json,
-        insufficient_activities: student.insufficient_activities,
-        positive_notes: student.positive_notes,
+        insufficient_activities: student.insufficient_activities_json,
+        positive_notes: student.positive_activities_json,
         behavioral_issues: student.behavioral_issues,
         attendance_issues: student.attendance_issues,
         personal_presentation: student.personal_presentation,
@@ -383,8 +477,8 @@ export function QualitativeReportPage() {
           colegio_id: selectedColegio,
           academic_year: 2026,
           activities_not_delivered: student.activities_json,
-          insufficient_activities: student.insufficient_activities,
-          positive_notes: student.positive_notes,
+          insufficient_activities: student.insufficient_activities_json,
+          positive_notes: student.positive_activities_json,
           behavioral_issues: student.behavioral_issues,
           attendance_issues: student.attendance_issues,
           personal_presentation: student.personal_presentation,
@@ -626,17 +720,17 @@ export function QualitativeReportPage() {
                             Estudiante
                           </div>
                         </th>
-                        <th className='min-w-[200px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                        <th className='min-w-[200px] border border-gray-300 bg-gray-50 px-4 py-2 text-center'>
                           <div className='text-sm leading-none font-medium'>
                             Actividades que no ha entregado
                           </div>
                         </th>
-                        <th className='min-w-[160px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                        <th className='min-w-[160px] border border-gray-300 bg-gray-50 px-4 py-2 text-center'>
                           <div className='text-sm leading-none font-medium'>
                             Actividades con notas insuficientes
                           </div>
                         </th>
-                        <th className='min-w-[160px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                        <th className='min-w-[160px] border border-gray-300 bg-gray-50 px-4 py-2 text-center'>
                           <div className='text-sm leading-none font-medium'>
                             Actividades con notas positivas
                           </div>
@@ -651,12 +745,12 @@ export function QualitativeReportPage() {
                             Faltas/Tarde
                           </div>
                         </th>
-                        <th className='min-w-[140px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                        <th className='min-w-[140px] border border-gray-300 bg-gray-50 px-4 py-2 text-center'>
                           <div className='text-sm leading-none font-medium'>
                             Presentación Personal
                           </div>
                         </th>
-                        <th className='min-w-[180px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                        <th className='min-w-[180px] border border-gray-300 bg-gray-50 px-4 py-2 text-center'>
                           <div className='text-sm leading-none font-medium'>
                             Observaciones
                           </div>
@@ -715,35 +809,69 @@ export function QualitativeReportPage() {
                               )}
                             </div>
                           </td>
-                          <td className='border border-gray-300 bg-white p-0'>
-                            <textarea
-                              value={student.insufficient_activities}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  student.id,
-                                  'insufficient_activities',
-                                  e.target.value
-                                )
-                              }
-                              className='h-full w-full resize-none appearance-none border-0 bg-transparent px-1 py-1 text-sm focus:outline-none'
-                              style={{ minHeight: '40px' }}
-                              placeholder='Actividades con nota baja...'
-                            />
+                          <td className='border border-gray-300 bg-white px-4 py-2'>
+                            <div className='max-h-[150px] overflow-y-auto'>
+                              {(
+                                student.insufficient_activities as ActivityWithLowPerformance[]
+                              ).length > 0 ? (
+                                <ul className='list-inside list-disc space-y-1 text-xs'>
+                                  {(
+                                    student.insufficient_activities as ActivityWithLowPerformance[]
+                                  ).map((activity, idx) => (
+                                    <li key={idx} className='leading-tight'>
+                                      <span className='inline-flex items-center text-[10px] font-medium whitespace-nowrap text-red-600'>
+                                        {activity.activity_type}:
+                                      </span>{' '}
+                                      <span className='leading-tight'>
+                                        {activity.name}
+                                      </span>{' '}
+                                      <span className='text-[10px] font-medium whitespace-nowrap text-red-600'>
+                                        ({activity.grade})
+                                      </span>{' '}
+                                      <span className='text-[10px] whitespace-nowrap text-gray-500'>
+                                        ({activity.created_at})
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span className='text-xs text-gray-400 italic'>
+                                  Sin actividades insuficientes
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className='border border-gray-300 bg-white p-0'>
-                            <textarea
-                              value={student.positive_notes}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  student.id,
-                                  'positive_notes',
-                                  e.target.value
-                                )
-                              }
-                              className='h-full w-full resize-none appearance-none border-0 bg-transparent px-1 py-1 text-sm focus:outline-none'
-                              style={{ minHeight: '40px' }}
-                              placeholder='Aspectos positivos...'
-                            />
+                          <td className='border border-gray-300 bg-white px-4 py-2'>
+                            <div className='max-h-[150px] overflow-y-auto'>
+                              {(
+                                student.positive_activities as ActivityWithPositivePerformance[]
+                              ).length > 0 ? (
+                                <ul className='list-inside list-disc space-y-1 text-xs'>
+                                  {(
+                                    student.positive_activities as ActivityWithPositivePerformance[]
+                                  ).map((activity, idx) => (
+                                    <li key={idx} className='leading-tight'>
+                                      <span className='inline-flex items-center text-[10px] font-medium whitespace-nowrap text-green-600'>
+                                        {activity.activity_type}:
+                                      </span>{' '}
+                                      <span className='leading-tight'>
+                                        {activity.name}
+                                      </span>{' '}
+                                      <span className='text-[10px] font-medium whitespace-nowrap text-green-600'>
+                                        ({activity.grade})
+                                      </span>{' '}
+                                      <span className='text-[10px] whitespace-nowrap text-gray-500'>
+                                        ({activity.created_at})
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span className='text-xs text-gray-400 italic'>
+                                  Sin actividades positivas
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className='w-24 border border-gray-300 bg-white p-0'>
                             <input
