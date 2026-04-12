@@ -25,6 +25,7 @@ import {
   Sliders,
   Building2,
   Users2,
+  User,
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 
@@ -58,13 +59,18 @@ export const sidebarData: SidebarData = {
           url: '/planillas',
           icon: FileText,
         },
-        {
-          title: 'Informe Preliminar',
-          url: '/informe-cualitativo',
-          icon: FileText,
-        },
-        {
-          title: 'Aplicaciones',
+  {
+    title: 'Informe Preliminar',
+    url: '/informe-cualitativo',
+    icon: FileText,
+  },
+  {
+    title: 'Informe Individual',
+    url: '/informe-individual-estudiante',
+    icon: User,
+  },
+  {
+    title: 'Aplicaciones',
           url: '/apps',
           icon: Package,
         },

@@ -7,6 +7,8 @@ export function useFilteredSidebarData() {
   const allowedForDocente = [
     'Dashboard',
     'Planillas',
+    'Informe Preliminar',
+    'Informe Individual',
     'Configuración',
     'Centro de Ayuda'
   ]

@@ -23,6 +23,7 @@ import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedPlanillasRouteRouteImport } from './routes/_authenticated/planillas/route'
+import { Route as AuthenticatedInformeIndividualEstudianteRouteRouteImport } from './routes/_authenticated/informe-individual-estudiante/route'
 import { Route as AuthenticatedInformeCualitativoRouteRouteImport } from './routes/_authenticated/informe-cualitativo/route'
 import { Route as AuthenticatedGradebookRouteRouteImport } from './routes/_authenticated/gradebook/route'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
@@ -126,6 +127,12 @@ const AuthenticatedPlanillasRouteRoute =
   AuthenticatedPlanillasRouteRouteImport.update({
     id: '/planillas',
     path: '/planillas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInformeIndividualEstudianteRouteRoute =
+  AuthenticatedInformeIndividualEstudianteRouteRouteImport.update({
+    id: '/informe-individual-estudiante',
+    path: '/informe-individual-estudiante',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedInformeCualitativoRouteRoute =
@@ -338,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/gradebook': typeof AuthenticatedGradebookRouteRoute
   '/informe-cualitativo': typeof AuthenticatedInformeCualitativoRouteRoute
+  '/informe-individual-estudiante': typeof AuthenticatedInformeIndividualEstudianteRouteRoute
   '/planillas': typeof AuthenticatedPlanillasRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
@@ -385,6 +393,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/gradebook': typeof AuthenticatedGradebookRouteRoute
   '/informe-cualitativo': typeof AuthenticatedInformeCualitativoRouteRoute
+  '/informe-individual-estudiante': typeof AuthenticatedInformeIndividualEstudianteRouteRoute
   '/planillas': typeof AuthenticatedPlanillasRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -433,6 +442,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/gradebook': typeof AuthenticatedGradebookRouteRoute
   '/_authenticated/informe-cualitativo': typeof AuthenticatedInformeCualitativoRouteRoute
+  '/_authenticated/informe-individual-estudiante': typeof AuthenticatedInformeIndividualEstudianteRouteRoute
   '/_authenticated/planillas': typeof AuthenticatedPlanillasRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
@@ -484,6 +494,7 @@ export interface FileRouteTypes {
     | '/'
     | '/gradebook'
     | '/informe-cualitativo'
+    | '/informe-individual-estudiante'
     | '/planillas'
     | '/settings'
     | '/forgot-password'
@@ -531,6 +542,7 @@ export interface FileRouteTypes {
   to:
     | '/gradebook'
     | '/informe-cualitativo'
+    | '/informe-individual-estudiante'
     | '/planillas'
     | '/forgot-password'
     | '/otp'
@@ -578,6 +590,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_authenticated/gradebook'
     | '/_authenticated/informe-cualitativo'
+    | '/_authenticated/informe-individual-estudiante'
     | '/_authenticated/planillas'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
@@ -736,6 +749,13 @@ declare module '@tanstack/react-router' {
       path: '/planillas'
       fullPath: '/planillas'
       preLoaderRoute: typeof AuthenticatedPlanillasRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/informe-individual-estudiante': {
+      id: '/_authenticated/informe-individual-estudiante'
+      path: '/informe-individual-estudiante'
+      fullPath: '/informe-individual-estudiante'
+      preLoaderRoute: typeof AuthenticatedInformeIndividualEstudianteRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/informe-cualitativo': {
@@ -1054,6 +1074,7 @@ const AuthenticatedGestionColegiosRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedGradebookRouteRoute: typeof AuthenticatedGradebookRouteRoute
   AuthenticatedInformeCualitativoRouteRoute: typeof AuthenticatedInformeCualitativoRouteRoute
+  AuthenticatedInformeIndividualEstudianteRouteRoute: typeof AuthenticatedInformeIndividualEstudianteRouteRoute
   AuthenticatedPlanillasRouteRoute: typeof AuthenticatedPlanillasRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -1078,6 +1099,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGradebookRouteRoute: AuthenticatedGradebookRouteRoute,
   AuthenticatedInformeCualitativoRouteRoute:
     AuthenticatedInformeCualitativoRouteRoute,
+  AuthenticatedInformeIndividualEstudianteRouteRoute:
+    AuthenticatedInformeIndividualEstudianteRouteRoute,
   AuthenticatedPlanillasRouteRoute:
     AuthenticatedPlanillasRouteRouteWithChildren,
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,

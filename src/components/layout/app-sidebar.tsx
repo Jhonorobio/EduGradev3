@@ -22,6 +22,7 @@ export function AppSidebar() {
     'Dashboard',
     'Planillas',
     'Informe Preliminar',
+    'Informe Individual',
     'Configuración',
     'Centro de Ayuda',
   ]
@@ -31,6 +32,7 @@ export function AppSidebar() {
     '/',
     '/planillas',
     '/informe-cualitativo',
+    '/informe-individual-estudiante',
     '/settings',
     '/settings/account',
     '/settings/appearance',
