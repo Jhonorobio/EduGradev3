@@ -58,6 +58,7 @@ interface SubjectWithGrades {
 interface ActivityNotDelivered {
   name: string
   category: string
+  activity_type: string
   created_at: string
 }
 
@@ -237,6 +238,15 @@ export function QualitativeReportPage() {
 
         if (gradebookData.grades[alumno.id]) {
           activities.forEach((activity) => {
+            // Solo incluir actividades de apuntes/tareas y talleres/exposiciones
+            // Excluir actitudinal y evaluación
+            if (
+              activity.category === 'actitudinal' ||
+              activity.category === 'evaluacion'
+            ) {
+              return
+            }
+
             const studentGrades = gradebookData.grades[alumno.id]
             const hasGrade =
               studentGrades &&
@@ -244,13 +254,8 @@ export function QualitativeReportPage() {
               studentGrades[activity.id] > 0
 
             if (!hasGrade) {
-              // Formatear la categoría para mostrar
-              const categoryLabels: Record<string, string> = {
-                apuntes_tareas: 'Apuntes/Tareas',
-                talleres_exposiciones: 'Talleres/Exposiciones',
-                actitudinal: 'Actitudinal',
-                evaluacion: 'Evaluación',
-              }
+              // El tipo específico de actividad se guarda en description
+              const activityType = activity.description || activity.category
 
               // Formatear la fecha (solo mes y día)
               const activityDate = new Date(activity.created_at)
@@ -261,8 +266,8 @@ export function QualitativeReportPage() {
 
               activitiesNotDelivered.push({
                 name: activity.name,
-                category:
-                  categoryLabels[activity.category] || activity.category,
+                category: activity.category,
+                activity_type: activityType,
                 created_at: formattedDate,
               })
             }
@@ -418,7 +423,7 @@ export function QualitativeReportPage() {
 
           // Título
           doc.setFontSize(16)
-          doc.text('INFORME CUALITATIVO', 148, 15, { align: 'center' })
+          doc.text('INFORME PRELIMINAR', 148, 15, { align: 'center' })
 
           // Subtítulo
           doc.setFontSize(12)
@@ -515,7 +520,7 @@ export function QualitativeReportPage() {
       gradesAsApps.push({
         id: grade.id,
         name: grade.name,
-        desc: 'Generar informe cualitativo para este grado',
+        desc: 'Generar informe preliminar para este grado',
         subjectId: currentSubject.subjectId,
         subjectName: currentSubject.subjectName,
         collegeId: currentSubject.collegeId,
@@ -568,7 +573,7 @@ export function QualitativeReportPage() {
                 </Button>
                 <div>
                   <h1 className='text-2xl font-bold tracking-tight'>
-                    Informe Cualitativo
+                    Informe Preliminar
                   </h1>
                   <p className='text-muted-foreground'>
                     {selectedGradebook.subjectName} -{' '}
@@ -596,242 +601,246 @@ export function QualitativeReportPage() {
             </div>
 
             {/* Tabla del informe */}
-            <Card>
-              <CardHeader>
-                <CardTitle className='text-lg'>
-                  Informe Cualitativo - Año Lectivo 2026
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className='flex items-center justify-center py-12'>
-                    <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary'></div>
-                  </div>
-                ) : students.length === 0 ? (
-                  <div className='flex flex-col items-center justify-center py-12 text-muted-foreground'>
-                    <Users className='mb-4 h-12 w-12' />
-                    <p>No hay estudiantes en este grado.</p>
-                  </div>
-                ) : (
-                  <div className='overflow-x-auto'>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className='bg-muted/50'>
-                          <TableHead className='w-[60px] text-center'>
+            {isLoading ? (
+              <div className='flex items-center justify-center py-12'>
+                <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-primary'></div>
+              </div>
+            ) : students.length === 0 ? (
+              <div className='flex flex-col items-center justify-center py-12 text-muted-foreground'>
+                <Users className='mb-4 h-12 w-12' />
+                <p>No hay estudiantes en este grado.</p>
+              </div>
+            ) : (
+              <div className='overflow-x-auto'>
+                <div className='overflow-hidden rounded-lg border'>
+                  <table className='w-full border-collapse'>
+                    <thead>
+                      <tr className='bg-gray-50'>
+                        <th className='w-12 rounded-tl-lg border border-gray-300 bg-gray-50 px-2 py-2 text-center'>
+                          <div className='text-sm leading-none font-medium'>
                             N°
-                          </TableHead>
-                          <TableHead className='min-w-[200px]'>
-                            Nombre del Estudiante
-                          </TableHead>
-                          <TableHead className='min-w-[200px] text-xs'>
-                            Actividades que
-                            <br />
-                            no ha entregado
-                          </TableHead>
-                          <TableHead className='min-w-[150px] text-xs'>
-                            Actividades
-                            <br />
-                            Insuficientes
-                          </TableHead>
-                          <TableHead className='min-w-[150px] text-xs'>
-                            Notas
-                            <br />
-                            Positivas
-                          </TableHead>
-                          <TableHead className='w-[100px] text-center text-xs'>
-                            Problemas de
-                            <br />
-                            Convivencia
-                          </TableHead>
-                          <TableHead className='w-[100px] text-center text-xs'>
-                            Faltas/Llegadas
-                            <br />
-                            Tarde
-                          </TableHead>
-                          <TableHead className='min-w-[150px] text-xs'>
-                            Presentación
-                            <br />
-                            Personal
-                          </TableHead>
-                          <TableHead className='min-w-[200px]'>
+                          </div>
+                        </th>
+                        <th className='min-w-48 border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                          <div className='text-sm leading-none font-medium'>
+                            Estudiante
+                          </div>
+                        </th>
+                        <th className='min-w-[200px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                          <div className='text-sm leading-none font-medium'>
+                            Actividades que no ha entregado
+                          </div>
+                        </th>
+                        <th className='min-w-[160px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                          <div className='text-sm leading-none font-medium'>
+                            Actividades con notas insuficientes
+                          </div>
+                        </th>
+                        <th className='min-w-[160px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                          <div className='text-sm leading-none font-medium'>
+                            Actividades con notas positivas
+                          </div>
+                        </th>
+                        <th className='w-24 border border-gray-300 bg-gray-50 px-2 py-2 text-center'>
+                          <div className='text-sm leading-none font-medium'>
+                            Probl. Convivencia
+                          </div>
+                        </th>
+                        <th className='w-24 border border-gray-300 bg-gray-50 px-2 py-2 text-center'>
+                          <div className='text-sm leading-none font-medium'>
+                            Faltas/Tarde
+                          </div>
+                        </th>
+                        <th className='min-w-[140px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                          <div className='text-sm leading-none font-medium'>
+                            Presentación Personal
+                          </div>
+                        </th>
+                        <th className='min-w-[180px] border border-gray-300 bg-gray-50 px-4 py-2 text-left'>
+                          <div className='text-sm leading-none font-medium'>
                             Observaciones
-                          </TableHead>
-                          <TableHead className='w-[100px]'>Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {students.map((student, index) => (
-                          <TableRow key={student.id}>
-                            <TableCell className='text-center font-medium'>
-                              {index + 1}
-                            </TableCell>
-                            <TableCell className='font-medium'>
-                              {student.name} {student.last_name}
-                            </TableCell>
-                            <TableCell className='align-top'>
-                              <div className='max-h-[200px] overflow-y-auto'>
-                                {(
-                                  student.activities_not_delivered as ActivityNotDelivered[]
-                                ).length > 0 ? (
-                                  <ul className='list-disc space-y-1 pl-4 text-xs'>
-                                    {(
-                                      student.activities_not_delivered as ActivityNotDelivered[]
-                                    ).map((activity, idx) => (
-                                      <li key={idx} className='text-xs'>
-                                        <span className='mr-1 inline-flex items-center rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800'>
-                                          {activity.category}
-                                        </span>
-                                        <span className='font-medium'>
-                                          {activity.name}
-                                        </span>
-                                        <span className='ml-1 text-[10px] text-muted-foreground'>
-                                          ({activity.created_at})
-                                        </span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <span className='text-xs text-muted-foreground italic'>
-                                    Sin actividades pendientes
-                                  </span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Textarea
-                                value={student.insufficient_activities}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    student.id,
-                                    'insufficient_activities',
-                                    e.target.value
-                                  )
-                                }
-                                className='min-h-[60px] resize-none text-xs'
-                                placeholder='Actividades con nota baja...'
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Textarea
-                                value={student.positive_notes}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    student.id,
-                                    'positive_notes',
-                                    e.target.value
-                                  )
-                                }
-                                className='min-h-[60px] resize-none text-xs'
-                                placeholder='Aspectos positivos...'
-                              />
-                            </TableCell>
-                            <TableCell className='text-center'>
-                              <Button
-                                variant={
-                                  student.behavioral_issues === 'Sí'
-                                    ? 'default'
-                                    : 'outline'
-                                }
-                                size='sm'
-                                className='w-16'
-                                onClick={() => {
-                                  const newValue =
-                                    student.behavioral_issues === 'Sí'
-                                      ? 'No'
-                                      : 'Sí'
-                                  handleInputChange(
-                                    student.id,
-                                    'behavioral_issues',
-                                    newValue
-                                  )
-                                }}
-                              >
-                                {student.behavioral_issues === 'Sí'
-                                  ? 'Sí'
-                                  : 'No'}
-                              </Button>
-                            </TableCell>
-                            <TableCell className='text-center'>
-                              <Button
-                                variant={
-                                  student.attendance_issues === 'Sí'
-                                    ? 'default'
-                                    : 'outline'
-                                }
-                                size='sm'
-                                className='w-16'
-                                onClick={() => {
-                                  const newValue =
-                                    student.attendance_issues === 'Sí'
-                                      ? 'No'
-                                      : 'Sí'
-                                  handleInputChange(
-                                    student.id,
-                                    'attendance_issues',
-                                    newValue
-                                  )
-                                }}
-                              >
-                                {student.attendance_issues === 'Sí'
-                                  ? 'Sí'
-                                  : 'No'}
-                              </Button>
-                            </TableCell>
-                            <TableCell>
-                              <Textarea
-                                value={student.personal_presentation}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    student.id,
-                                    'personal_presentation',
-                                    e.target.value
-                                  )
-                                }
-                                className='min-h-[60px] resize-none text-xs'
-                                placeholder='Presentación personal...'
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Textarea
-                                value={student.observations}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    student.id,
-                                    'observations',
-                                    e.target.value
-                                  )
-                                }
-                                className='min-h-[60px] resize-none text-xs'
-                                placeholder='Observaciones generales...'
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Button
-                                variant='outline'
-                                size='sm'
+                          </div>
+                        </th>
+                        <th className='w-16 rounded-tr-lg border border-gray-300 bg-gray-50 px-2 py-2 text-center'>
+                          <div className='flex justify-center'>
+                            <Save className='h-4 w-4' />
+                          </div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {students.map((student, index) => (
+                        <tr key={student.id} className='hover:bg-gray-50'>
+                          <td
+                            className={`w-12 border border-gray-300 bg-white px-2 py-2 text-center font-medium ${index === students.length - 1 ? 'rounded-bl-lg' : ''}`}
+                          >
+                            {index + 1}
+                          </td>
+                          <td className='border border-gray-300 bg-white px-4 py-2 text-left'>
+                            <div>
+                              <div className='font-medium'>{student.name}</div>
+                              {student.last_name && (
+                                <div className='text-sm text-muted-foreground'>
+                                  {student.last_name}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className='border border-gray-300 bg-white px-4 py-2'>
+                            <div className='max-h-[150px] overflow-y-auto'>
+                              {(
+                                student.activities_not_delivered as ActivityNotDelivered[]
+                              ).length > 0 ? (
+                                <ul className='list-inside list-disc space-y-1 text-xs'>
+                                  {(
+                                    student.activities_not_delivered as ActivityNotDelivered[]
+                                  ).map((activity, idx) => (
+                                    <li key={idx} className='leading-tight'>
+                                      <span className='inline-flex items-center text-[10px] font-medium whitespace-nowrap text-blue-600'>
+                                        {activity.activity_type}:
+                                      </span>{' '}
+                                      <span className='leading-tight'>
+                                        {activity.name}
+                                      </span>{' '}
+                                      <span className='text-[10px] whitespace-nowrap text-gray-500'>
+                                        ({activity.created_at})
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span className='text-xs text-gray-400 italic'>
+                                  Sin actividades pendientes
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className='border border-gray-300 bg-white p-0'>
+                            <textarea
+                              value={student.insufficient_activities}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  student.id,
+                                  'insufficient_activities',
+                                  e.target.value
+                                )
+                              }
+                              className='h-full w-full resize-none appearance-none border-0 bg-transparent px-1 py-1 text-sm focus:outline-none'
+                              style={{ minHeight: '40px' }}
+                              placeholder='Actividades con nota baja...'
+                            />
+                          </td>
+                          <td className='border border-gray-300 bg-white p-0'>
+                            <textarea
+                              value={student.positive_notes}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  student.id,
+                                  'positive_notes',
+                                  e.target.value
+                                )
+                              }
+                              className='h-full w-full resize-none appearance-none border-0 bg-transparent px-1 py-1 text-sm focus:outline-none'
+                              style={{ minHeight: '40px' }}
+                              placeholder='Aspectos positivos...'
+                            />
+                          </td>
+                          <td className='w-24 border border-gray-300 bg-white p-0'>
+                            <input
+                              type='text'
+                              inputMode='decimal'
+                              value={student.behavioral_issues}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  student.id,
+                                  'behavioral_issues',
+                                  e.target.value
+                                )
+                              }
+                              placeholder='No'
+                              className='h-full w-full appearance-none border-0 px-1 py-1 text-center text-sm focus:outline-none'
+                              style={{ minHeight: '40px' }}
+                            />
+                          </td>
+                          <td className='w-24 border border-gray-300 bg-white p-0'>
+                            <input
+                              type='text'
+                              inputMode='decimal'
+                              value={student.attendance_issues}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  student.id,
+                                  'attendance_issues',
+                                  e.target.value
+                                )
+                              }
+                              placeholder='No'
+                              className='h-full w-full appearance-none border-0 px-1 py-1 text-center text-sm focus:outline-none'
+                              style={{ minHeight: '40px' }}
+                            />
+                          </td>
+                          <td className='border border-gray-300 bg-white p-0'>
+                            <textarea
+                              value={student.personal_presentation}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  student.id,
+                                  'personal_presentation',
+                                  e.target.value
+                                )
+                              }
+                              className='h-full w-full resize-none appearance-none border-0 bg-transparent px-1 py-1 text-sm focus:outline-none'
+                              style={{ minHeight: '40px' }}
+                              placeholder='Presentación personal...'
+                            />
+                          </td>
+                          <td className='border border-gray-300 bg-white p-0'>
+                            <textarea
+                              value={student.observations}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  student.id,
+                                  'observations',
+                                  e.target.value
+                                )
+                              }
+                              className='h-full w-full resize-none appearance-none border-0 bg-transparent px-1 py-1 text-sm focus:outline-none'
+                              style={{ minHeight: '40px' }}
+                              placeholder='Observaciones generales...'
+                            />
+                          </td>
+                          <td
+                            className={`w-16 border border-gray-300 bg-white px-1 py-1 font-medium ${index === students.length - 1 ? 'rounded-br-lg' : ''}`}
+                          >
+                            <div
+                              className='flex h-full items-center justify-center'
+                              style={{ minHeight: '40px' }}
+                            >
+                              <button
                                 onClick={() => handleSaveReport(student)}
                                 disabled={isSaving}
+                                className='flex h-6 w-6 items-center justify-center rounded hover:bg-gray-100'
                               >
-                                <Save className='h-3 w-3' />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                                <Save className='h-4 w-4' />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          // Vista de selección de materia y grados (como Planillas)
+          // Vista de selección de materia y grados
           <div className='space-y-6'>
             <div>
               <div className='flex items-center justify-between'>
                 <div>
                   <h1 className='text-2xl font-bold tracking-tight'>
-                    Informe Cualitativo
+                    Informe Preliminar
                   </h1>
                   <p className='text-muted-foreground'>
                     Selecciona una materia y grado para generar el informe.
