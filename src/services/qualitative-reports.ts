@@ -181,6 +181,115 @@ export async function deleteQualitativeReport(id: string): Promise<void> {
   }
 }
 
+// Enviar informes al director de grupo
+export async function submitReportsToDirector(
+  reports: CreateQualitativeReportDTO[]
+): Promise<void> {
+  if (reports.length === 0) return;
+
+  // Actualizar todos los informes a status 'submitted'
+  const updates = reports.map(async (report) => {
+    // Buscar si existe un reporte para este estudiante/materia/periodo/año
+    const { data: existing } = await supabase
+      .from('qualitative_reports')
+      .select('id')
+      .eq('student_id', report.student_id)
+      .eq('subject_id', report.subject_id)
+      .eq('period', report.period)
+      .eq('academic_year', report.academic_year || 2026)
+      .maybeSingle();
+
+    if (existing) {
+      // Actualizar existente y marcar como enviado
+      const { error } = await supabase
+        .from('qualitative_reports')
+        .update({
+          activities_not_delivered: report.activities_not_delivered,
+          insufficient_activities: report.insufficient_activities,
+          positive_notes: report.positive_notes,
+          behavioral_issues: report.behavioral_issues,
+          attendance_issues: report.attendance_issues,
+          personal_presentation: report.personal_presentation,
+          observations: report.observations,
+          status: 'submitted',
+        })
+        .eq('id', existing.id);
+
+      if (error) throw error;
+    } else {
+      // Crear nuevo con status 'submitted'
+      const { error } = await supabase
+        .from('qualitative_reports')
+        .insert([{
+          ...report,
+          status: 'submitted',
+        }]);
+
+      if (error) throw error;
+    }
+  });
+
+  await Promise.all(updates);
+}
+
+// Obtener informes enviados para un grado (para el director)
+export async function getSubmittedReportsForGrade(
+  gradeId: string,
+  period: number,
+  academicYear?: number
+): Promise<QualitativeReport[]> {
+  const { data, error } = await supabase
+    .from('qualitative_reports')
+    .select(`
+      *,
+      student:alumnos(id, name, last_name),
+      subject:subjects(id, name),
+      grade:grades(id, name)
+    `)
+    .eq('grade_id', gradeId)
+    .eq('period', period)
+    .eq('academic_year', academicYear || 2026)
+    .eq('status', 'submitted')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching submitted reports:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// Obtener informes enviados para un estudiante específico (para el director)
+export async function getSubmittedReportsForStudent(
+  studentId: string,
+  period: number,
+  academicYear?: number
+): Promise<QualitativeReport[]> {
+  console.log('Fetching reports for student:', studentId, 'period:', period, 'year:', academicYear || 2026);
+  
+  const { data, error } = await supabase
+    .from('qualitative_reports')
+    .select(`
+      *,
+      student:alumnos(id, name, last_name),
+      subject:subjects!subject_id(id, name),
+      grade:grades!grade_id(id, name)
+    `)
+    .eq('student_id', studentId)
+    .eq('period', period)
+    .eq('academic_year', academicYear || 2026)
+    .eq('status', 'submitted');
+
+  if (error) {
+    console.error('Error fetching student reports:', error);
+    throw error;
+  }
+
+  console.log('Raw data from Supabase:', data);
+  return data || [];
+}
+
 export async function upsertQualitativeReport(
   report: CreateQualitativeReportDTO
 ): Promise<QualitativeReport> {

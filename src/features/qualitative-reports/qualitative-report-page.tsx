@@ -9,6 +9,7 @@ import { getGradebookData, getActivities, Activity } from '@/services/gradebook'
 import {
   getQualitativeReports,
   upsertQualitativeReport,
+  submitReportsToDirector,
   QualitativeReport,
   CreateQualitativeReportDTO,
 } from '@/services/qualitative-reports'
@@ -19,6 +20,7 @@ import {
   Save,
   ChevronLeft,
   Download,
+  Send,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { sortGradesEducationally } from '@/utils/grade-ordering'
@@ -491,12 +493,45 @@ export function QualitativeReportPage() {
     } catch (error) {
       console.error('Error saving all reports:', error)
       toast.error('Error al guardar los informes')
-    } finally {
-      setIsSaving(false)
-    }
+  } finally {
+    setIsSaving(false)
   }
+}
 
-  const currentSubject = subjects.find((s) => s.subjectId === selectedSubject)
+// Función para enviar informes al director de grupo
+const handleSendToDirector = async () => {
+  if (!user?.id || !selectedColegio || !selectedGradebook) return
+
+  setIsSaving(true)
+  try {
+    const reportsToSubmit: CreateQualitativeReportDTO[] = students.map((student) => ({
+      student_id: student.id,
+      subject_id: selectedGradebook.subjectId,
+      grade_id: selectedGradebook.gradeId,
+      period: parseInt(selectedPeriod),
+      teacher_id: user.id,
+      colegio_id: selectedColegio,
+      academic_year: 2026,
+      activities_not_delivered: student.activities_json,
+      insufficient_activities: student.insufficient_activities_json,
+      positive_notes: student.positive_activities_json,
+      behavioral_issues: student.behavioral_issues,
+      attendance_issues: student.attendance_issues,
+      personal_presentation: student.personal_presentation,
+      observations: student.observations,
+    }))
+
+    await submitReportsToDirector(reportsToSubmit)
+    toast.success('Informes enviados al director de grupo exitosamente')
+  } catch (error) {
+    console.error('Error sending reports to director:', error)
+    toast.error('Error al enviar los informes al director')
+  } finally {
+    setIsSaving(false)
+  }
+}
+
+const currentSubject = subjects.find((s) => s.subjectId === selectedSubject)
 
 // Función para exportar a PDF
 const handleExportPDF = () => {
@@ -753,23 +788,31 @@ const handleExportPDF = () => {
                   </p>
                 </div>
               </div>
-              <div className='flex gap-2'>
-                <Button
-                  variant='outline'
-                  onClick={handleExportPDF}
-                  disabled={students.length === 0}
-                >
-                  <Download className='mr-2 h-4 w-4' />
-                  Exportar PDF
-                </Button>
-                <Button
-                  onClick={handleSaveAll}
-                  disabled={isSaving || students.length === 0}
-                >
-                  <Save className='mr-2 h-4 w-4' />
-                  {isSaving ? 'Guardando...' : 'Guardar Todo'}
-                </Button>
-              </div>
+          <div className='flex gap-2'>
+            <Button
+              variant='outline'
+              onClick={handleExportPDF}
+              disabled={students.length === 0}
+            >
+              <Download className='mr-2 h-4 w-4' />
+              Exportar PDF
+            </Button>
+            <Button
+              onClick={handleSaveAll}
+              disabled={isSaving || students.length === 0}
+            >
+              <Save className='mr-2 h-4 w-4' />
+              {isSaving ? 'Guardando...' : 'Guardar Todo'}
+            </Button>
+            <Button
+              onClick={handleSendToDirector}
+              disabled={isSaving || students.length === 0}
+              className='bg-green-600 hover:bg-green-700'
+            >
+              <Send className='mr-2 h-4 w-4' />
+              {isSaving ? 'Enviando...' : 'Enviar al Director'}
+            </Button>
+          </div>
             </div>
 
             {/* Tabla del informe */}
