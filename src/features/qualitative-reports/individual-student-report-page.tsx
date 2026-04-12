@@ -165,35 +165,49 @@ export function IndividualStudentReportPage() {
         let insufficientActivities = ''
         let positiveNotes = ''
 
-        if (submittedReport) {
-          try {
-            // Parsear actividades no entregadas
-            if (submittedReport.activities_not_delivered) {
-              const activities = JSON.parse(submittedReport.activities_not_delivered)
-              pendingActivities = activities
-                .map((a: any) => `• ${a.name}`)
-                .join('\n')
-            }
-
-            // Parsear actividades insuficientes
-            if (submittedReport.insufficient_activities) {
-              const activities = JSON.parse(submittedReport.insufficient_activities)
-              insufficientActivities = activities
-                .map((a: any) => `• ${a.name} (${a.grade})`)
-                .join('\n')
-            }
-
-            // Parsear notas positivas
-            if (submittedReport.positive_notes) {
-              const activities = JSON.parse(submittedReport.positive_notes)
-              positiveNotes = activities
-                .map((a: any) => `• ${a.name} (${a.grade})`)
-                .join('\n')
-            }
-          } catch (e) {
-            console.error('Error parsing activities:', e)
+      if (submittedReport) {
+        try {
+          // Parsear actividades no entregadas
+          if (submittedReport.activities_not_delivered) {
+            const activities = JSON.parse(submittedReport.activities_not_delivered)
+            pendingActivities = activities
+              .map((a: any) => {
+                // Mostrar nombre + tipo de actividad si existe
+                const activityType = a.activity_type || a.category || ''
+                return activityType 
+                  ? `• ${a.name} (${activityType})`
+                  : `• ${a.name}`
+              })
+              .join('\n')
           }
+
+          // Parsear actividades insuficientes
+          if (submittedReport.insufficient_activities) {
+            const activities = JSON.parse(submittedReport.insufficient_activities)
+            insufficientActivities = activities
+              .map((a: any) => {
+                const activityType = a.activity_type || a.category || ''
+                const typeText = activityType ? ` - ${activityType}` : ''
+                return `• ${a.name}${typeText} (${a.grade})`
+              })
+              .join('\n')
+          }
+
+          // Parsear notas positivas
+          if (submittedReport.positive_notes) {
+            const activities = JSON.parse(submittedReport.positive_notes)
+            positiveNotes = activities
+              .map((a: any) => {
+                const activityType = a.activity_type || a.category || ''
+                const typeText = activityType ? ` - ${activityType}` : ''
+                return `• ${a.name}${typeText} (${a.grade})`
+              })
+              .join('\n')
+          }
+        } catch (e) {
+          console.error('Error parsing activities:', e)
         }
+      }
 
         return {
           subjectId: item.subject.id,
