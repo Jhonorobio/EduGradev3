@@ -8,6 +8,7 @@ import {
 } from '@/services/gradebook'
 import { ArrowLeft, Plus, Trash2, Edit, MoreVertical, Save } from 'lucide-react'
 import { toast } from 'sonner'
+import { formatGradeInput, parseGradeInput } from '@/utils/grade-formatter'
 import { useAuth } from '@/hooks/use-auth'
 import { useStudentAverages } from '@/hooks/use-student-averages'
 import { Button } from '@/components/ui/button'
@@ -53,40 +54,26 @@ function GradeInputCell({
   inputId,
   nextInputId,
 }: GradeInputCellProps) {
-  const [inputValue, setInputValue] = useState<string>(
-    value !== undefined && value !== null && value !== 0 ? value.toString() : ''
-  )
+  const [inputValue, setInputValue] = useState<string>(formatGradeInput(value))
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Solo actualizar desde props cuando el input no tiene foco
   useEffect(() => {
-    const newValue =
-      value !== undefined && value !== null && value !== 0
-        ? value.toString()
-        : ''
+    const newValue = formatGradeInput(value)
     if (document.activeElement !== inputRef.current) {
       setInputValue(newValue)
     }
   }, [value])
 
   const commitValue = (val: string) => {
-    const normalized = val.trim().replace(',', '.')
-    if (normalized === '' || normalized === '.') {
-      onChange(0)
-      setInputValue('')
-      return
-    }
-    const numericValue = parseFloat(normalized)
-    if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= maxScore) {
+    const numericValue = parseGradeInput(val)
+    if (numericValue >= 0 && numericValue <= maxScore) {
       onChange(numericValue)
-      setInputValue(numericValue.toString())
+      // Mostrar siempre con un decimal
+      setInputValue(numericValue === 0 ? '' : numericValue.toFixed(1))
     } else {
       // Revertir al valor guardado
-      const savedValue =
-        value !== undefined && value !== null && value !== 0
-          ? value.toString()
-          : ''
-      setInputValue(savedValue)
+      setInputValue(formatGradeInput(value))
     }
   }
 

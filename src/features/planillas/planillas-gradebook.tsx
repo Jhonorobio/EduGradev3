@@ -17,6 +17,7 @@ import {
   Edit,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { formatGradeInput, parseGradeInput } from '@/utils/grade-formatter'
 import { useAuth } from '@/hooks/use-auth'
 import { useStudentAverages } from '@/hooks/use-student-averages'
 import { Badge } from '@/components/ui/badge'
@@ -79,15 +80,12 @@ function GradeInput({
   onGradeChange,
   students,
 }: GradeInputProps) {
-  const [inputValue, setInputValue] = useState<string>(
-    grade !== undefined && grade !== null ? grade.toString() : ''
-  )
+  const [inputValue, setInputValue] = useState<string>(formatGradeInput(grade))
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Update local value when external grade changes (only when not focused)
   useEffect(() => {
-    const newValue =
-      grade !== undefined && grade !== null ? grade.toString() : ''
+    const newValue = formatGradeInput(grade)
     if (
       document.activeElement !== inputRef.current &&
       newValue !== inputValue
@@ -97,26 +95,14 @@ function GradeInput({
   }, [grade, inputValue])
 
   const commitValue = (value: string) => {
-    // Replace comma with dot for parsing (handles both 9,5 and 9.5)
-    const normalized = value.trim().replace(',', '.')
-    if (normalized === '' || normalized === '.') {
-      onGradeChange(studentId, activityId, 0)
-      setInputValue('')
-      return
-    }
-    const numericValue = parseFloat(normalized)
-    if (
-      !isNaN(numericValue) &&
-      numericValue >= 0 &&
-      numericValue <= activityMaxScore
-    ) {
+    const numericValue = parseGradeInput(value)
+    if (numericValue >= 0 && numericValue <= activityMaxScore) {
       onGradeChange(studentId, activityId, numericValue)
-      setInputValue(numericValue.toString())
+      // Mostrar siempre con un decimal
+      setInputValue(numericValue === 0 ? '' : numericValue.toFixed(1))
     } else {
       // Revert to saved value
-      const savedValue =
-        grade !== undefined && grade !== null ? grade.toString() : ''
-      setInputValue(savedValue)
+      setInputValue(formatGradeInput(grade))
     }
   }
 
@@ -169,7 +155,7 @@ function GradeInput({
       onChange={handleChange}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      placeholder='0'
+      placeholder='0.0'
       className='h-full w-full border-0 bg-transparent px-2 py-1 text-center text-sm focus:outline-none'
       style={{ minHeight: '40px' }}
     />
@@ -624,29 +610,49 @@ export function PlanillasGradebook({
 
                     {/* Columna Actitudinal - Fija */}
                     <td className='w-24 border border-gray-300 bg-white p-0'>
-                      <input
-                        type='text'
-                        inputMode='decimal'
-                        placeholder='0'
-                        min='0'
-                        max='50'
-                        step='0.01'
-                        className='h-full w-full appearance-none border-0 px-1 py-1 text-center text-sm focus:outline-none'
-                        style={{ minHeight: '40px' }}
+                      <GradeInput
+                        studentId={student.id}
+                        activityId='actitudinal'
+                        activityMaxScore={10}
+                        grade={grades[student.id]?.['actitudinal']}
+                        onGradeChange={(studentId, activityId, score) => {
+                          handleGradeChange(studentId, activityId, score)
+                          // Save to backend
+                          upsertGradebookEntry({
+                            student_id: studentId,
+                            activity_id: activityId,
+                            score: score,
+                            graded_by: user?.id,
+                          }).catch((error) => {
+                            console.error('Error saving grade:', error)
+                            toast.error('Error al guardar la calificación')
+                          })
+                        }}
+                        students={students}
                       />
                     </td>
 
                     {/* Columna Evaluación - Fija */}
                     <td className='w-24 border border-gray-300 bg-white p-0'>
-                      <input
-                        type='text'
-                        inputMode='decimal'
-                        placeholder='0'
-                        min='0'
-                        max='100'
-                        step='0.01'
-                        className='h-full w-full appearance-none border-0 px-1 py-1 text-center text-sm focus:outline-none'
-                        style={{ minHeight: '40px' }}
+                      <GradeInput
+                        studentId={student.id}
+                        activityId='evaluacion'
+                        activityMaxScore={10}
+                        grade={grades[student.id]?.['evaluacion']}
+                        onGradeChange={(studentId, activityId, score) => {
+                          handleGradeChange(studentId, activityId, score)
+                          // Save to backend
+                          upsertGradebookEntry({
+                            student_id: studentId,
+                            activity_id: activityId,
+                            score: score,
+                            graded_by: user?.id,
+                          }).catch((error) => {
+                            console.error('Error saving grade:', error)
+                            toast.error('Error al guardar la calificación')
+                          })
+                        }}
+                        students={students}
                       />
                     </td>
 

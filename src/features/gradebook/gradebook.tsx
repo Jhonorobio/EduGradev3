@@ -18,6 +18,7 @@ import {
   Calculator,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { formatGradeInput, parseGradeInput } from '@/utils/grade-formatter'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import {

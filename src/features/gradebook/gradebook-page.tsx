@@ -18,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { formatGradeInput, parseGradeInput } from '@/utils/grade-formatter'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -90,9 +91,7 @@ function GradeInput({
 }: GradeInputProps) {
   const inputKey = `${studentId}-${activityId}`
   const inputRef = useRef<HTMLInputElement>(null)
-  const [inputValue, setInputValue] = useState<string>(
-    grade !== undefined && grade !== null ? grade.toString() : ''
-  )
+  const [inputValue, setInputValue] = useState<string>(formatGradeInput(grade))
 
   // Register this input in the parent refs map
   useEffect(() => {
@@ -106,36 +105,23 @@ function GradeInput({
   }, [inputKey, inputRefs])
 
   const commitValue = (value: string) => {
-    const trimmed = value.trim()
-    if (trimmed === '') {
-      onGradeChange(studentId, activityId, 0)
-      setInputValue('')
-      return
-    }
-    const numericValue = parseFloat(trimmed)
-    if (
-      !isNaN(numericValue) &&
-      numericValue >= 0 &&
-      numericValue <= activityMaxScore
-    ) {
+    const numericValue = parseGradeInput(value)
+    if (numericValue >= 0 && numericValue <= activityMaxScore) {
       onGradeChange(studentId, activityId, numericValue)
-      setInputValue(numericValue.toString())
+      // Mostrar siempre con un decimal
+      setInputValue(numericValue === 0 ? '' : numericValue.toFixed(1))
     } else {
-      // Revert to saved value or empty
-      const savedValue =
-        grade !== undefined && grade !== null ? grade.toString() : ''
-      setInputValue(savedValue)
+      // Revert to saved value
+      setInputValue(formatGradeInput(grade))
     }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
-    console.log('GradeInput handleChange:', { newValue, studentId, activityId })
 
     // Allow: empty, digits, digits with one decimal point
     // Examples: "", "9", "9.", "9.5", "0.5", ".5"
     const isValid = newValue === '' || /^\d*\.?\d{0,2}$/.test(newValue)
-    console.log('Is valid:', isValid)
 
     if (isValid) {
       setInputValue(newValue)
@@ -183,7 +169,7 @@ function GradeInput({
       onChange={handleChange}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      placeholder='0'
+      placeholder='0.0'
       className='w-20 text-center'
     />
   )
