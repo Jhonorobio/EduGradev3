@@ -271,22 +271,6 @@ export function IndividualStudentReportPage() {
                 })
                 .join('\n')
             }
-
-            // Parsear notas positivas
-            if (submittedReport.positive_notes) {
-              const activities = JSON.parse(submittedReport.positive_notes)
-              positiveNotes = activities
-                .map((a: any) => {
-                  // Formato: tipo: nombre (nota)
-                  const activityType =
-                    a.activity_type || a.category || 'Actividad'
-                  const grade = a.grade !== undefined ? a.grade : ''
-                  return grade !== ''
-                    ? `${activityType}: ${a.name} (${grade})`
-                    : `${activityType}: ${a.name}`
-                })
-                .join('\n')
-            }
           } catch (e) {
             console.error('Error parsing activities:', e)
           }
