@@ -19,6 +19,8 @@ import {
   ChevronLeft,
   Download,
   Loader2,
+  FileSpreadsheet,
+  FileText as FileTextIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/use-auth'
@@ -84,6 +86,8 @@ export function IndividualStudentReportPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('1')
   const [report, setReport] = useState<StudentReport | null>(null)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isGeneratingAllPDFs, setIsGeneratingAllPDFs] = useState(false)
+  const [isGeneratingAllWords, setIsGeneratingAllWords] = useState(false)
   const [gradeSubjects, setGradeSubjects] = useState<GradeSubject[]>([])
 
   // Track if we've already loaded to prevent re-loading
@@ -498,16 +502,25 @@ export function IndividualStudentReportPage() {
       doc.setFont('helvetica', 'bold')
       doc.text('Estudiante:', 10, 60)
       doc.setFont('helvetica', 'normal')
-      doc.text(
-        `${selectedStudent.name} ${selectedStudent.last_name}`.toUpperCase(),
-        40,
-        60
-      )
+      const studentNameText =
+        `${selectedStudent.name} ${selectedStudent.last_name}`.toUpperCase()
+      doc.text(studentNameText, 40, 60)
+
+      // Línea 1: Solo debajo del nombre del estudiante
+      doc.setDrawColor(0)
+      doc.setLineWidth(0.3)
+      const studentNameWidth = doc.getTextWidth(studentNameText)
+      doc.line(40, 62, 40 + studentNameWidth, 62)
 
       doc.setFont('helvetica', 'bold')
       doc.text('Grado:', 110, 60)
       doc.setFont('helvetica', 'normal')
-      doc.text(managedGrade.name, 130, 60)
+      const gradeText = managedGrade.name
+      doc.text(gradeText, 130, 60)
+
+      // Línea 2: Solo debajo del grado
+      const gradeWidth = doc.getTextWidth(gradeText)
+      doc.line(130, 62, 130 + gradeWidth, 62)
 
       // === TABLA DE MATERIAS ===
       // Preparar datos para la tabla
@@ -543,6 +556,7 @@ export function IndividualStudentReportPage() {
         body: tableData,
         startY: 65,
         theme: 'grid',
+        showHead: 'firstPage', // Solo mostrar encabezado en la primera página
         styles: {
           fontSize: 8,
           cellPadding: 2,
@@ -565,7 +579,7 @@ export function IndividualStudentReportPage() {
           2: { cellWidth: 45 },
           3: { cellWidth: 45 },
         },
-        margin: { top: 65, right: 10, bottom: 40, left: 10 },
+        margin: { top: 15, right: 10, bottom: 40, left: 10 }, // Reducir margen superior para páginas siguientes
       })
 
       // Obtener la posición final de la tabla
@@ -626,6 +640,820 @@ export function IndividualStudentReportPage() {
       toast.error('Error al generar el PDF')
     } finally {
       setIsGeneratingPDF(false)
+    }
+  }
+
+  // Función para generar el contenido del PDF de un estudiante
+  const generateStudentPDFContent = async (
+    doc: any,
+    student: Alumno,
+    studentReport: StudentReport,
+    autoTableFn: any
+  ) => {
+    const today = new Date()
+    const fechaStr = today.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+
+    // === ENCABEZADO MANUAL CON 4 CELDAS ===
+    const headerStartX = 10
+    const headerStartY = 8
+    const headerWidth = 190
+    const headerHeight = 45
+    const halfWidth = headerWidth / 2
+    const halfHeight = headerHeight / 2
+
+    // Dibujar bordes exteriores
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.5)
+    doc.rect(headerStartX, headerStartY, headerWidth, headerHeight)
+
+    // Línea vertical del medio
+    doc.line(
+      headerStartX + halfWidth,
+      headerStartY,
+      headerStartX + halfWidth,
+      headerStartY + headerHeight
+    )
+
+    // Línea horizontal del medio
+    doc.line(
+      headerStartX,
+      headerStartY + halfHeight,
+      headerStartX + headerWidth,
+      headerStartY + halfHeight
+    )
+
+    // === CELDA 1: Colegio y Lema (arriba-izquierda) ===
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text(
+      'COLEGIO PATRICIO SYMES',
+      headerStartX + halfWidth / 2,
+      headerStartY + 12,
+      { align: 'center' }
+    )
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'italic')
+    doc.text(
+      '"Mi enseñanza goteara como la lluvia"',
+      headerStartX + halfWidth / 2,
+      headerStartY + 20,
+      { align: 'center' }
+    )
+
+    // === CELDA 2: Logo (arriba-derecha) ===
+    const cell2CenterX = headerStartX + halfWidth + halfWidth / 2
+    const cell2CenterY = headerStartY + halfHeight / 2
+    const logoWidth = 22
+    const logoHeight = 20
+
+    if (LOGO_BASE64) {
+      try {
+        doc.addImage(
+          LOGO_BASE64,
+          'PNG',
+          cell2CenterX - logoWidth / 2,
+          cell2CenterY - logoHeight / 2,
+          logoWidth,
+          logoHeight
+        )
+      } catch (e) {
+        console.error('Error adding logo:', e)
+      }
+    }
+
+    // === CELDA 3: Informe y Año (abajo-izquierda) ===
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text(
+      'INFORME PRELIMINAR ESTUDIANTES',
+      headerStartX + halfWidth / 2,
+      headerStartY + halfHeight + 10,
+      { align: 'center' }
+    )
+    doc.text(
+      'AÑO LECTIVO 2026',
+      headerStartX + halfWidth / 2,
+      headerStartY + halfHeight + 18,
+      { align: 'center' }
+    )
+
+    // === CELDA 4: Fecha y Período (abajo-derecha) ===
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text(
+      `FECHA: ${fechaStr}`,
+      headerStartX + halfWidth + halfWidth / 2,
+      headerStartY + halfHeight + 8,
+      { align: 'center' }
+    )
+    doc.text(
+      `Corte ${selectedPeriod}º Período.`,
+      headerStartX + halfWidth + halfWidth / 2,
+      headerStartY + halfHeight + 16,
+      { align: 'center' }
+    )
+
+    // === INFORMACIÓN DEL ESTUDIANTE ===
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Estudiante:', 10, 60)
+    doc.setFont('helvetica', 'normal')
+    const studentNameText = `${student.name} ${student.last_name}`.toUpperCase()
+    doc.text(studentNameText, 40, 60)
+
+    // Línea 1: Solo debajo del nombre del estudiante
+    doc.setDrawColor(0)
+    doc.setLineWidth(0.3)
+    const studentNameWidth = doc.getTextWidth(studentNameText)
+    doc.line(40, 62, 40 + studentNameWidth, 62)
+
+    doc.setFont('helvetica', 'bold')
+    doc.text('Grado:', 110, 60)
+    doc.setFont('helvetica', 'normal')
+    const gradeText = managedGrade?.name || ''
+    doc.text(gradeText, 130, 60)
+
+    // Línea 2: Solo debajo del grado
+    const gradeWidth = doc.getTextWidth(gradeText)
+    doc.line(130, 62, 130 + gradeWidth, 62)
+
+    // === TABLA DE MATERIAS ===
+    const tableData = studentReport.observations.map((obs) => [
+      obs.subjectName,
+      obs.pendingActivities || '',
+      obs.insufficientActivities || '',
+      obs.positiveNotes || '',
+    ])
+
+    autoTableFn(doc, {
+      head: [
+        [
+          {
+            content: 'ASIGNATURA',
+            styles: { halign: 'center', fontStyle: 'bold' },
+          },
+          {
+            content: 'ACTIVIDADES PENDIENTES',
+            styles: { halign: 'center', fontStyle: 'bold' },
+          },
+          {
+            content: 'ACTIVIDADES INSUFICIENTES',
+            styles: { halign: 'center', fontStyle: 'bold' },
+          },
+          {
+            content: 'NOTAS POSITIVAS',
+            styles: { halign: 'center', fontStyle: 'bold' },
+          },
+        ],
+      ],
+      body: tableData,
+      startY: 65,
+      theme: 'grid',
+      showHead: 'firstPage',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        valign: 'top',
+        lineWidth: 0.3,
+        lineColor: [0, 0, 0],
+      },
+      headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontSize: 9,
+        fontStyle: 'bold',
+        lineWidth: 0.3,
+        lineColor: [0, 0, 0],
+      },
+      columnStyles: {
+        0: { cellWidth: 50, fontStyle: 'bold' },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 45 },
+        3: { cellWidth: 45 },
+      },
+      margin: { top: 15, right: 10, bottom: 40, left: 10 },
+    })
+
+    // Obtener la posición final de la tabla
+    const finalY = (doc as any).lastAutoTable?.finalY || 180
+
+    // === OBSERVACIONES/ACTITUDINAL ===
+    let currentY = finalY + 10
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text('OBSERVACIONES/ ACTITUDINAL', 10, currentY)
+    currentY += 8
+
+    // Líneas para observaciones
+    doc.setFont('helvetica', 'normal')
+    doc.setDrawColor(0)
+    for (let i = 0; i < 3; i++) {
+      doc.line(10, currentY, 200, currentY)
+      currentY += 8
+    }
+
+    // === FIRMAS ===
+    currentY += 20
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setLineWidth(0.3)
+    doc.setDrawColor(0)
+
+    const startX = 15
+    const lineY = currentY + 1
+
+    // === Director de Grupo ===
+    const dirText = 'DIRECTOR DE GRUPO: '
+    doc.text(dirText, startX, currentY)
+
+    const dirLineStart = startX + doc.getTextWidth(dirText)
+    doc.line(dirLineStart, lineY, dirLineStart + 35, lineY)
+
+    // === Firma Padre de Familia ===
+    const padreText = ' FIRMA PADRE DE FAMILIA: '
+    const padreTextX = dirLineStart + 35 + 5
+    doc.text(padreText, padreTextX, currentY)
+
+    const padreLineStart = padreTextX + doc.getTextWidth(padreText)
+    doc.line(padreLineStart, lineY, padreLineStart + 35, lineY)
+  }
+
+  // Generar PDF con todos los estudiantes
+  const handleGenerateAllPDFs = async () => {
+    if (!managedGrade || students.length === 0) return
+
+    setIsGeneratingAllPDFs(true)
+    try {
+      const [{ jsPDF }, autoTable] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ])
+
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      })
+
+      doc.setFont('helvetica', 'normal')
+      const autoTableFn = (autoTable as any).default || autoTable
+
+      // Cargar informes para todos los estudiantes
+      const allReports: { student: Alumno; report: StudentReport }[] = []
+
+      for (const student of students) {
+        try {
+          const submittedReports = await getSubmittedReportsForStudent(
+            student.id,
+            parseInt(selectedPeriod)
+          )
+
+          const reportsBySubject = new Map<string, QualitativeReport>()
+          submittedReports.forEach((report) => {
+            const subjectId = report.subject?.id || (report as any).subject_id
+            if (subjectId) {
+              reportsBySubject.set(subjectId, report)
+            }
+          })
+
+          const observations: SubjectObservation[] = gradeSubjects.map(
+            (item) => {
+              const submittedReport = reportsBySubject.get(item.subject.id)
+
+              let pendingActivities = ''
+              let insufficientActivities = ''
+              let positiveNotes = ''
+
+              if (submittedReport) {
+                try {
+                  if (submittedReport.activities_not_delivered) {
+                    const activities = JSON.parse(
+                      submittedReport.activities_not_delivered
+                    )
+                    pendingActivities = activities
+                      .map((a: any) => {
+                        const activityType =
+                          a.activity_type || a.category || 'Actividad'
+                        const date = a.created_at || ''
+                        return date
+                          ? `${activityType}: ${a.name} (${date})`
+                          : `${activityType}: ${a.name}`
+                      })
+                      .join('\n')
+                  }
+
+                  if (submittedReport.insufficient_activities) {
+                    const activities = JSON.parse(
+                      submittedReport.insufficient_activities
+                    )
+                    insufficientActivities = activities
+                      .map((a: any) => {
+                        const activityType =
+                          a.activity_type || a.category || 'Actividad'
+                        const grade = a.grade !== undefined ? a.grade : ''
+                        if (grade !== '') {
+                          const gradeNum =
+                            typeof grade === 'number'
+                              ? grade
+                              : parseFloat(grade)
+                          const formattedGrade = isNaN(gradeNum)
+                            ? grade
+                            : gradeNum.toFixed(1)
+                          return `${activityType}: ${a.name} (${formattedGrade})`
+                        }
+                        return `${activityType}: ${a.name}`
+                      })
+                      .join('\n')
+                  }
+
+                  if (submittedReport.positive_notes) {
+                    const activities = JSON.parse(
+                      submittedReport.positive_notes
+                    )
+                    positiveNotes = activities
+                      .map((a: any) => {
+                        const activityType =
+                          a.activity_type || a.category || 'Actividad'
+                        const grade = a.grade !== undefined ? a.grade : ''
+                        if (grade !== '') {
+                          const gradeNum =
+                            typeof grade === 'number'
+                              ? grade
+                              : parseFloat(grade)
+                          const formattedGrade = isNaN(gradeNum)
+                            ? grade
+                            : gradeNum.toFixed(1)
+                          return `${activityType}: ${a.name} (${formattedGrade})`
+                        }
+                        return `${activityType}: ${a.name}`
+                      })
+                      .join('\n')
+                  }
+                } catch (e) {
+                  console.error('Error parsing activities:', e)
+                }
+              }
+
+              return {
+                subjectId: item.subject.id,
+                subjectName: item.subject.name,
+                pendingActivities: pendingActivities || '',
+                insufficientActivities: insufficientActivities || '',
+                positiveNotes: positiveNotes || '',
+                teacherObservation: submittedReport?.observations || '',
+                behavioralIssues: submittedReport?.behavioral_issues || 'No',
+                attendanceIssues: submittedReport?.attendance_issues || 'No',
+                personalPresentation:
+                  submittedReport?.personal_presentation || '',
+              }
+            }
+          )
+
+          allReports.push({
+            student,
+            report: {
+              student,
+              subjects: gradeSubjects,
+              observations,
+              generalObservations: '',
+            },
+          })
+        } catch (error) {
+          console.error(
+            `Error loading report for student ${student.id}:`,
+            error
+          )
+        }
+      }
+
+      // Generar PDF con todos los estudiantes
+      for (let i = 0; i < allReports.length; i++) {
+        const { student, report: studentReport } = allReports[i]
+
+        if (i > 0) {
+          doc.addPage()
+        }
+
+        await generateStudentPDFContent(
+          doc,
+          student,
+          studentReport,
+          autoTableFn
+        )
+      }
+
+      // Guardar PDF
+      const fileName = `informes_individuales_${managedGrade.name}_periodo${selectedPeriod}.pdf`
+      doc.save(fileName)
+
+      toast.success(`PDF generado con ${allReports.length} informes`)
+    } catch (error) {
+      console.error('Error generating all PDFs:', error)
+      toast.error('Error al generar los PDFs')
+    } finally {
+      setIsGeneratingAllPDFs(false)
+    }
+  }
+
+  // Generar Word con todos los estudiantes
+  const handleGenerateAllWords = async () => {
+    if (!managedGrade || students.length === 0) return
+
+    setIsGeneratingAllWords(true)
+    try {
+      const docx = await import('docx')
+      const { saveAs } = await import('file-saver')
+
+      const {
+        Document,
+        Paragraph,
+        Table,
+        TableCell,
+        TableRow,
+        TextRun,
+        AlignmentType,
+        BorderStyle,
+        WidthType,
+      } = docx
+
+      // Cargar informes para todos los estudiantes
+      const allReports: { student: Alumno; report: StudentReport }[] = []
+
+      for (const student of students) {
+        try {
+          const submittedReports = await getSubmittedReportsForStudent(
+            student.id,
+            parseInt(selectedPeriod)
+          )
+
+          const reportsBySubject = new Map<string, QualitativeReport>()
+          submittedReports.forEach((report) => {
+            const subjectId = report.subject?.id || (report as any).subject_id
+            if (subjectId) {
+              reportsBySubject.set(subjectId, report)
+            }
+          })
+
+          const observations: SubjectObservation[] = gradeSubjects.map(
+            (item) => {
+              const submittedReport = reportsBySubject.get(item.subject.id)
+
+              let pendingActivities = ''
+              let insufficientActivities = ''
+              let positiveNotes = ''
+
+              if (submittedReport) {
+                try {
+                  if (submittedReport.activities_not_delivered) {
+                    const activities = JSON.parse(
+                      submittedReport.activities_not_delivered
+                    )
+                    pendingActivities = activities
+                      .map((a: any) => {
+                        const activityType =
+                          a.activity_type || a.category || 'Actividad'
+                        const date = a.created_at || ''
+                        return date
+                          ? `${activityType}: ${a.name} (${date})`
+                          : `${activityType}: ${a.name}`
+                      })
+                      .join('\n')
+                  }
+
+                  if (submittedReport.insufficient_activities) {
+                    const activities = JSON.parse(
+                      submittedReport.insufficient_activities
+                    )
+                    insufficientActivities = activities
+                      .map((a: any) => {
+                        const activityType =
+                          a.activity_type || a.category || 'Actividad'
+                        const grade = a.grade !== undefined ? a.grade : ''
+                        if (grade !== '') {
+                          const gradeNum =
+                            typeof grade === 'number'
+                              ? grade
+                              : parseFloat(grade)
+                          const formattedGrade = isNaN(gradeNum)
+                            ? grade
+                            : gradeNum.toFixed(1)
+                          return `${activityType}: ${a.name} (${formattedGrade})`
+                        }
+                        return `${activityType}: ${a.name}`
+                      })
+                      .join('\n')
+                  }
+
+                  if (submittedReport.positive_notes) {
+                    const activities = JSON.parse(
+                      submittedReport.positive_notes
+                    )
+                    positiveNotes = activities
+                      .map((a: any) => {
+                        const activityType =
+                          a.activity_type || a.category || 'Actividad'
+                        const grade = a.grade !== undefined ? a.grade : ''
+                        if (grade !== '') {
+                          const gradeNum =
+                            typeof grade === 'number'
+                              ? grade
+                              : parseFloat(grade)
+                          const formattedGrade = isNaN(gradeNum)
+                            ? grade
+                            : gradeNum.toFixed(1)
+                          return `${activityType}: ${a.name} (${formattedGrade})`
+                        }
+                        return `${activityType}: ${a.name}`
+                      })
+                      .join('\n')
+                  }
+                } catch (e) {
+                  console.error('Error parsing activities:', e)
+                }
+              }
+
+              return {
+                subjectId: item.subject.id,
+                subjectName: item.subject.name,
+                pendingActivities: pendingActivities || '',
+                insufficientActivities: insufficientActivities || '',
+                positiveNotes: positiveNotes || '',
+                teacherObservation: submittedReport?.observations || '',
+                behavioralIssues: submittedReport?.behavioral_issues || 'No',
+                attendanceIssues: submittedReport?.attendance_issues || 'No',
+                personalPresentation:
+                  submittedReport?.personal_presentation || '',
+              }
+            }
+          )
+
+          allReports.push({
+            student,
+            report: {
+              student,
+              subjects: gradeSubjects,
+              observations,
+              generalObservations: '',
+            },
+          })
+        } catch (error) {
+          console.error(
+            `Error loading report for student ${student.id}:`,
+            error
+          )
+        }
+      }
+
+      // Crear documento Word
+      const children: any[] = []
+
+      for (let i = 0; i < allReports.length; i++) {
+        const { student, report: studentReport } = allReports[i]
+
+        if (i > 0) {
+          children.push(new Paragraph({ pageBreakBefore: true }))
+        }
+
+        // Encabezado
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'COLEGIO PATRICIO SYMES',
+                bold: true,
+                size: 28,
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: '"Mi enseñanza goteara como la lluvia"',
+                italics: true,
+                size: 20,
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'INFORME PRELIMINAR ESTUDIANTES',
+                bold: true,
+                size: 20,
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'AÑO LECTIVO 2026',
+                bold: true,
+                size: 20,
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Corte ${selectedPeriod}º Período`,
+                size: 18,
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({ text: '' })
+        )
+
+        // Información del estudiante
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'Estudiante: ', bold: true }),
+              new TextRun({
+                text: `${student.name} ${student.last_name}`.toUpperCase(),
+              }),
+              new TextRun({ text: '    Grado: ', bold: true }),
+              new TextRun({ text: managedGrade.name }),
+            ],
+          }),
+          new Paragraph({ text: '' })
+        )
+
+        // Tabla de materias
+        const tableRows: TableRow[] = [
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [new TextRun({ text: 'ASIGNATURA', bold: true })],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                ],
+                width: { size: 25, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: 'ACTIVIDADES PENDIENTES',
+                        bold: true,
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                ],
+                width: { size: 25, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: 'ACTIVIDADES INSUFICIENTES',
+                        bold: true,
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                ],
+                width: { size: 25, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    children: [
+                      new TextRun({ text: 'NOTAS POSITIVAS', bold: true }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                ],
+                width: { size: 25, type: WidthType.PERCENTAGE },
+              }),
+            ],
+          }),
+        ]
+
+        studentReport.observations.forEach((obs) => {
+          tableRows.push(
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({ text: obs.subjectName, bold: true }),
+                      ],
+                    }),
+                  ],
+                }),
+                new TableCell({
+                  children: obs.pendingActivities
+                    ? obs.pendingActivities
+                        .split('\n')
+                        .map((line) => new Paragraph({ text: line }))
+                    : [new Paragraph({ text: '' })],
+                }),
+                new TableCell({
+                  children: obs.insufficientActivities
+                    ? obs.insufficientActivities
+                        .split('\n')
+                        .map((line) => new Paragraph({ text: line }))
+                    : [new Paragraph({ text: '' })],
+                }),
+                new TableCell({
+                  children: obs.positiveNotes
+                    ? obs.positiveNotes
+                        .split('\n')
+                        .map((line) => new Paragraph({ text: line }))
+                    : [new Paragraph({ text: '' })],
+                }),
+              ],
+            })
+          )
+        })
+
+        children.push(
+          new Table({
+            rows: tableRows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+              bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+              left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+              right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+              insideHorizontal: {
+                style: BorderStyle.SINGLE,
+                size: 1,
+                color: '000000',
+              },
+              insideVertical: {
+                style: BorderStyle.SINGLE,
+                size: 1,
+                color: '000000',
+              },
+            },
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: 'OBSERVACIONES/ACTITUDINAL', bold: true }),
+            ],
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'DIRECTOR DE GRUPO: ___________________________',
+                bold: true,
+              }),
+              new TextRun({
+                text: '    FIRMA PADRE DE FAMILIA: ___________________________',
+              }),
+            ],
+          })
+        )
+      }
+
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children,
+          },
+        ],
+      })
+
+      const blob = await docx.Packer.toBlob(doc)
+      saveAs(
+        blob,
+        `informes_individuales_${managedGrade.name}_periodo${selectedPeriod}.docx`
+      )
+
+      toast.success(`Word generado con ${allReports.length} informes`)
+    } catch (error) {
+      console.error('Error generating all Words:', error)
+      toast.error('Error al generar los archivos Word')
+    } finally {
+      setIsGeneratingAllWords(false)
     }
   }
 
@@ -995,14 +1823,45 @@ export function IndividualStudentReportPage() {
       <Main>
         <div className='space-y-6'>
           {/* Header */}
-          <div>
-            <h1 className='text-2xl font-bold tracking-tight'>
-              Informe Individual de Estudiantes
-            </h1>
-            <p className='text-muted-foreground'>
-              Grado: <span className='font-semibold'>{managedGrade.name}</span>{' '}
-              | Selecciona un estudiante para generar su informe
-            </p>
+          <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+            <div>
+              <h1 className='text-2xl font-bold tracking-tight'>
+                Informe Individual de Estudiantes
+              </h1>
+              <p className='text-muted-foreground'>
+                Grado:{' '}
+                <span className='font-semibold'>{managedGrade.name}</span> |
+                Selecciona un estudiante para generar su informe
+              </p>
+            </div>
+            <div className='flex flex-wrap gap-2'>
+              <Button
+                variant='outline'
+                onClick={handleGenerateAllPDFs}
+                disabled={isGeneratingAllPDFs || students.length === 0}
+              >
+                {isGeneratingAllPDFs ? (
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                ) : (
+                  <FileTextIcon className='mr-2 h-4 w-4' />
+                )}
+                {isGeneratingAllPDFs ? 'Generando...' : 'Descargar todos (PDF)'}
+              </Button>
+              <Button
+                variant='outline'
+                onClick={handleGenerateAllWords}
+                disabled={isGeneratingAllWords || students.length === 0}
+              >
+                {isGeneratingAllWords ? (
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                ) : (
+                  <FileSpreadsheet className='mr-2 h-4 w-4' />
+                )}
+                {isGeneratingAllWords
+                  ? 'Generando...'
+                  : 'Descargar todos (Word)'}
+              </Button>
+            </div>
           </div>
 
           <Separator />
